@@ -1,15 +1,15 @@
 package gouda
 
 import (
-        "container/vector"
-//	"fmt"
+	"container/vector"
+	//	"fmt"
 	"reflect"
 	"strings"
-	)
+)
 
 type Relation struct {
 	conditions vector.StringVector
-	table string
+	table      string
 }
 
 func (r *Relation) Where(s string) *Relation {
@@ -20,9 +20,9 @@ func (r *Relation) Where(s string) *Relation {
 
 }
 
-func (r *Relation) Table(t string) *Relation{
-	r.table=t
-return r
+func (r *Relation) Table(t string) *Relation {
+	r.table = t
+	return r
 }
 
 func (r *Relation) String() string {
@@ -41,7 +41,7 @@ func (r *Relation) String() string {
 }
 
 func (r *Relation) Sql() (sql string) {
-	sql = "Select * from "+r.table+" where ( "
+	sql = "Select * from " + r.table + " where ( "
 	for _, ss := range r.conditions {
 		sql += ss
 		if ss != r.conditions.Last() {
@@ -54,10 +54,17 @@ func (r *Relation) Sql() (sql string) {
 	return
 }
 
-func  NewRelation(t interface{}) (r *Relation){
-	r=new(Relation)
-	tab:=strings.Split(reflect.Typeof(t).String(),".",0)
-	tablename:=strings.ToLower(tab[len(tab)-1])
+func From(t interface{}) (r *Relation) { return NewRelation(t) }
+
+func NewRelation(t interface{}) (r *Relation) {
+	r = new(Relation)
+	switch  typ := t.(type) {
+	case string:
+	r.Table(t.(string));
+	default:
+	tab := strings.Split(reflect.Typeof(t).String(), ".", 0)
+	tablename := strings.ToLower(tab[len(tab)-1])
 	r.Table(tablename)
+	}
 	return
 }
