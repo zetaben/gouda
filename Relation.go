@@ -2,7 +2,9 @@ package gouda
 
 import (
         "container/vector"
-	"fmt"
+//	"fmt"
+	"reflect"
+	"strings"
 	)
 
 type Relation struct {
@@ -54,6 +56,8 @@ func (r *Relation) Sql() (sql string) {
 
 func  NewRelation(t interface{}) (r *Relation){
 	r=new(Relation)
-	r.Table(fmt.Sprintf("%T",t))
+	tab:=strings.Split(reflect.Typeof(t).String(),".",0)
+	tablename:=strings.ToLower(tab[len(tab)-1])
+	r.Table(tablename)
 	return
 }
