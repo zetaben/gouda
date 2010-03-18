@@ -5,6 +5,7 @@ import (
 	"strings"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type mysqlConnector struct {
@@ -42,14 +43,29 @@ func (e *mysqlConnector) Query(r *Relation) string {
 	fmt.Println(res)
 	fmt.Println(res.FieldCount)
 
-	fmt.Println(res)
-
+	fmt.Println(len(res.ResultSet.Rows))
+	tmp := make(map[string]Value)
 	for rowmap := res.FetchRowMap(); rowmap != nil; rowmap = res.FetchRowMap() {
 		fmt.Printf("%#v\n", rowmap)
 		fmt.Printf("%#v\n", res.ResultSet.Fields)
+		for i := 0; i < len(rowmap); i++ {
+//			rowmap[rs.ResultSet.Fields[i].Name] = row.Data[i].Data
+			fmt.Println(res.ResultSet.Fields[i].Name)
+			var val Value;
+			fmt.Println(res.ResultSet.Fields[i].Type)
+			switch res.ResultSet.Fields[i].Type {
+			case mysql.MYSQL_TYPE_VAR_STRING:
+				val=SysString(rowmap[res.ResultSet.Fields[i].Name]).Value()
+			case mysql.MYSQL_TYPE_LONG:
+				t,_:=strconv.Atoi(rowmap[res.ResultSet.Fields[i].Name])
+				val=SysInt(t).Value()
+			}
+			tmp[res.ResultSet.Fields[i].Name] = val
+//			tmp["id"] = val
+		}
 
 	}
-
+	fmt.Println(tmp)
 	return "plip"
 }
 

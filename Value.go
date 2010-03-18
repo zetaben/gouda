@@ -16,49 +16,49 @@ const (
 
 
 
+type SysString string;
+type SysInt int;
 type Value interface {
 	Kind() int;
 	Number() float64;
-	String() string;
+	String() SysString;
 	Bool() bool;
-	Int() int;
+	Int() SysInt;
 }
 
 type WriteValue interface {
 	SetNumber( float64);
-	SetString( string);
+	SetString( SysString);
 	SetBool( bool);
-	SetInt(int);
+	SetInt(SysInt);
 }
 
 type _Null struct{}
 
 func (*_Null) Kind() int		{ return NullKind }
 func (*_Null) Number() float64		{ return 0 }
-func (*_Null) String() string		{ return "null" }
+func (*_Null) String() SysString		{ return "null" }
 func (*_Null) Bool() bool		{ return false }
-func (*_Null) Int() int			{ return 0 }
+func (*_Null) Int() SysInt			{ return 0 }
 func (*_Null)	SetNumber( float64) {};
-func (*_Null)	SetString( string){};
+func (*_Null)	SetString( SysString){};
 func (*_Null)	SetBool( bool) {};
-func (*_Null)	SetInt(int) {};
+func (*_Null)	SetInt(SysInt) {};
 
 
-type SysInt int;
 type _Int struct
 {
 	value SysInt;
 	_Null
 }
 
-func (e * _Int) Kind() SysInt { return IntKind}
+func (e * _Int) Kind() int { return IntKind}
 func (e * _Int) Int() SysInt { return e.value}
 func (e * _Int) SetInt(i SysInt) { e.value=i}
 
 func (i  SysInt ) Value()(ii * _Int){ ii=new(_Int);ii.SetInt(i); return }
 
 
-type SysString string;
 type _String struct {
 	value SysString;
 	_Null
