@@ -8,5 +8,6 @@ GOFILES=\
 Relation.go\
 Connection.go\
 MysqlConnection.go\
+Value.go\
 
 include $(GOROOT)/src/Make.pkg

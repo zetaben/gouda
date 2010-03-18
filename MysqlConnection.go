@@ -40,6 +40,15 @@ func (e *mysqlConnector) Query(r *Relation) string {
 		os.Exit(1)
 	}
 	fmt.Println(res)
+	fmt.Println(res.FieldCount)
+
+	fmt.Println(res)
+
+	for rowmap := res.FetchRowMap(); rowmap != nil; rowmap = res.FetchRowMap() {
+		fmt.Printf("%#v\n", rowmap)
+		fmt.Printf("%#v\n", res.ResultSet.Fields)
+
+	}
 
 	return "plip"
 }
