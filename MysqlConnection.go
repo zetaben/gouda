@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"container/vector"
 )
 
 type mysqlConnector struct {
@@ -44,6 +45,7 @@ func (e *mysqlConnector) Query(r *Relation) string {
 	fmt.Println(res.FieldCount)
 
 	fmt.Println(len(res.ResultSet.Rows))
+	var ret vector.Vector
 	tmp := make(map[string]Value)
 	for rowmap := res.FetchRowMap(); rowmap != nil; rowmap = res.FetchRowMap() {
 		fmt.Printf("%#v\n", rowmap)
@@ -63,9 +65,9 @@ func (e *mysqlConnector) Query(r *Relation) string {
 			tmp[res.ResultSet.Fields[i].Name] = val
 //			tmp["id"] = val
 		}
-
+		ret.Push(tmp)
 	}
-	fmt.Println(tmp)
+	fmt.Printf("%#v\n",ret)
 	return "plip"
 }
 
