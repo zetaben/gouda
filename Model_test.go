@@ -4,6 +4,7 @@ import (
 	"gouda"
 	"testing"
 	"fmt"
+	"sort"
 	"reflect"
 )
 
@@ -29,6 +30,21 @@ func TestAttributes(t *testing.T) {
 		t.Error("Can't find Attributes found : " + fmt.Sprint(attr) + "\n")
 	}
 
+}
+
+
+func TestAttributesName(t *testing.T) {
+	p := new(Personne)
+	attr := gouda.M(p).AttributesNames()
+	names := []string{"Nom","Id"}
+	sort.StringArray(attr).Sort()
+	sort.StringArray(names).Sort()
+	if len(names)!=len(attr){
+		  t.Error("Attributes Names, found  size mismatch : "+fmt.Sprint(len(attr))+" for "+fmt.Sprint(len(names)))
+	}
+	if !reflect.DeepEqual(names,attr) {
+		  t.Error("Can't find Attributes Names, found : "+fmt.Sprint(attr))
+	}
 }
 
 

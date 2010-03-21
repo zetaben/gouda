@@ -54,3 +54,15 @@ func M(m ModelInterface) *Model {
 func (m *Model) Attributes() map[string]reflect.Type {
 	return m.attributes
 }
+
+func (m *Model) AttributesNames() (ret  []string) {
+	ret=make([]string,len(m.attributes))
+	i:=0
+	for k,_:=range m.attributes {
+	ret[i]=k
+	i++
+	}
+	return ret
+}
+
+
