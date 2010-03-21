@@ -9,5 +9,6 @@ Relation.go\
 Connection.go\
 MysqlConnection.go\
 Value.go\
+Model.go\
 
 include $(GOROOT)/src/Make.pkg
