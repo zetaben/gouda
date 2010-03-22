@@ -59,6 +59,18 @@ func TestAttributesName(t *testing.T) {
 }
 
 
+func TestModelName(t *testing.T) {
+	p := new(Personne)
+	if fname:=gouda.ModelName(p);fname!="Personne-personne" {
+		  t.Error("wrong name found : "+fname)
+	}
+
+	var pp Personne
+	if fname:=gouda.ModelName(pp);fname!="Personne-personne" {
+		  t.Error("wrong name found : "+fname)
+	}
+}
+
 func compare(a, b map[string]reflect.Type) bool {
 
 	ok := true

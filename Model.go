@@ -2,7 +2,8 @@ package gouda
 
 import (
 	"reflect"
-	"fmt"
+//	"fmt"
+	"strings"
 )
 /** Types **/
 type ModelInterface interface {
@@ -14,9 +15,9 @@ type Model struct {
 	attributes map[string]reflect.Type
 }
 
-type ModelStore map[string]Model
+type ModelStore map[string]*Model
 
-var _ModelStore = make(map[string]Model)
+var _ModelStore = make(ModelStore)
 
 /** utils **/
 
@@ -28,13 +29,13 @@ func attributes(m interface{}) map[string]reflect.Type {
 		st = reflect.Typeof(m).(*reflect.StructType)
 	}
 
-	fmt.Println(st.NumField())
+	//fmt.Println(st.NumField())
 
 	ret := make(map[string]reflect.Type)
 
 	for i := 0; i < st.NumField(); i++ {
 		p := st.Field(i)
-		fmt.Println(p.Name)
+		//fmt.Println(p.Name)
 		if !p.Anonymous {
 			ret[p.Name] = p.Type
 		}
@@ -62,13 +63,25 @@ func (m *Model) AttributesNames() (ret  []string) {
 	return ret
 }
 
+func ModelName(m ModelInterface ) (ret string) {
+	t:=reflect.Typeof(m).String()
+	tab:=strings.Split(t,".",0)
+	return tab[len(tab)-1]+"-"+m.TableName()
+}
+
 /** ModelInterface **/
 
 func M(m ModelInterface) *Model {
+	modelname:=ModelName(m)
+	if model,present:=_ModelStore[modelname]; present {
+	return model
+	}
 	mod := new(Model)
 	mod.tablename = m.TableName()
 	mod.attributes = attributes(m)
+	_ModelStore[modelname]=mod
 	return mod
+
 }
 
 
