@@ -42,6 +42,17 @@ func TestAttributesName(t *testing.T) {
 	if len(names)!=len(attr){
 		  t.Error("Attributes Names, found  size mismatch : "+fmt.Sprint(len(attr))+" for "+fmt.Sprint(len(names)))
 	}
+
+	if !reflect.DeepEqual(names,attr) {
+		  t.Error("Can't find Attributes Names, found : "+fmt.Sprint(attr))
+	}
+	var pp Personne
+	attr = gouda.M(pp).AttributesNames()
+	sort.StringArray(attr).Sort()
+	if len(names)!=len(attr){
+		  t.Error("Attributes Names, found  size mismatch : "+fmt.Sprint(len(attr))+" for "+fmt.Sprint(len(names)))
+	}
+
 	if !reflect.DeepEqual(names,attr) {
 		  t.Error("Can't find Attributes Names, found : "+fmt.Sprint(attr))
 	}

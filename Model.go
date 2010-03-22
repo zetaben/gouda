@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"fmt"
 )
-
+/** Types **/
 type ModelInterface interface {
 	TableName() string
 }
@@ -14,8 +14,11 @@ type Model struct {
 	attributes map[string]reflect.Type
 }
 
-type ModelStore struct{}
+type ModelStore map[string]Model
 
+var _ModelStore = make(map[string]Model)
+
+/** utils **/
 
 func attributes(m interface{}) map[string]reflect.Type {
 	var st *reflect.StructType
@@ -40,15 +43,9 @@ func attributes(m interface{}) map[string]reflect.Type {
 	return ret
 }
 
+/** Model **/
 func (m Model) TableName() string { return m.tablename }
 
-
-func M(m ModelInterface) *Model {
-	mod := new(Model)
-	mod.tablename = m.TableName()
-	mod.attributes = attributes(m)
-	return mod
-}
 
 
 func (m *Model) Attributes() map[string]reflect.Type {
@@ -65,4 +62,19 @@ func (m *Model) AttributesNames() (ret  []string) {
 	return ret
 }
 
+/** ModelInterface **/
+
+func M(m ModelInterface) *Model {
+	mod := new(Model)
+	mod.tablename = m.TableName()
+	mod.attributes = attributes(m)
+	return mod
+}
+
+
+/** ModelStore **/
+
+func GetModelStore() *ModelStore {
+	return &_ModelStore;
+}
 
