@@ -2,7 +2,7 @@ package gouda
 
 import (
 	"container/vector"
-	//	"fmt"
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -10,6 +10,10 @@ import (
 type Relation struct {
 	conditions vector.StringVector
 	table      string
+	limit_offset int
+	limit_count int
+	order_field vector.StringVector
+	order_direction vector.StringVector
 }
 
 func (r *Relation) Where(s string) *Relation {
@@ -25,9 +29,26 @@ func (r *Relation) Table(t string) *Relation {
 	return r
 }
 
+func (r * Relation ) Limit(offset, count int) *Relation {
+	r.limit_offset=offset
+	r.limit_count=count
+	return r
+}
+
+func (r * Relation) First()  *Relation {
+	r.Limit(0,1)
+	return r
+}
+
+func (r *Relation) Order(field, direction string ) *Relation {
+	r.order_field.Push(field)
+	r.order_direction.Push(direction)
+	return r
+}
+
 func (r *Relation) String() string {
 
-	s := " Conditions : ("
+	s := " Conditions : \n\t ("
 
 	for _, ss := range r.conditions {
 		s += ss
@@ -35,23 +56,24 @@ func (r *Relation) String() string {
 			s += ", "
 		}
 	}
-	s += ")"
-
-	return "Une relation" + s
-}
-
-func (r *Relation) Sql() (sql string) {
-	sql = "Select * from " + r.table + " where ( "
-	for _, ss := range r.conditions {
-		sql += ss
-		if ss != r.conditions.Last() {
-			sql += " ) AND ( "
+	s += ") \n"
+	if r.order_field.Len() > 0 {
+		s += "Order :\n\t ("
+		for i, ss := range r.order_field {
+			s += ss
+			s += " "
+			s += r.order_direction[i]
+			if ss != r.order_field.Last() {
+				s += ", "
+			}
 		}
+		s += ") \n"
 	}
-
-	sql += " );"
-
-	return
+	if r.limit_count > 0 {
+		s += "Offset : "+fmt.Sprint(r.limit_offset)+"\n"
+		s += "Count : "+fmt.Sprint(r.limit_count)+"\n"
+	}
+	return "Une relation" + s
 }
 
 func From(t interface{}) (r *Relation) { return NewRelation(t) }

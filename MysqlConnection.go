@@ -35,8 +35,11 @@ func (e *mysqlConnector) Open(conStr string) bool {
 	return false
 }
 
+
+
+
 func (e *mysqlConnector) Query(r *Relation) string {
-	res, err := e.conn.Query(r.Sql())
+	res, err := e.conn.Query(mysql_query(r))
 	if err != nil {
 		fmt.Printf("%s\n", err)
 		os.Exit(1)
@@ -75,4 +78,29 @@ func OpenMysql(conStr string) *mysqlConnector {
 	db := new(mysqlConnector)
 	db.Open(conStr)
 	return db
+}
+
+
+func  mysql_query(r * Relation) (sql string) {
+	sql = "Select * from " + r.table + " where ( "
+	for _, ss := range r.conditions {
+		sql += ss
+		if ss != r.conditions.Last() {
+			sql += " ) AND ( "
+		}
+	}
+
+	sql += " )"
+	if (r.order_field.Len()>0){
+		sql+="ORDER BY"
+			for i, ss := range r.order_field {
+				sql += ss+" "+r.order_direction[i]
+			}
+	}
+
+	if r.limit_count > 0 {
+		sql+="LIMIT "+fmt.Sprint(r.limit_offset)+", "+fmt.Sprint(r.limit_count)
+	}
+	sql +=";"
+	return
 }
