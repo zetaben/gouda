@@ -13,7 +13,7 @@ type ModelInterface interface {
 type Model struct {
 	tablename  string
 	attributes map[string]reflect.Type
-	connection Connection
+	connection *Connection
 }
 
 type ModelStore map[string]*Model
@@ -82,7 +82,7 @@ func M(m ModelInterface) *Model {
 	mod.attributes = attributes(m)
 	_ModelStore[modelname]=mod
 	*/
-	return GetModelStore().RegisterModel(m,nil)
+	return GetModelStore().RegisterModel(m)
 
 }
 
@@ -93,7 +93,10 @@ func GetModelStore() *ModelStore {
 	return &_ModelStore;
 }
 
-func (st *ModelStore) RegisterModel(m ModelInterface,conn Connection) *Model {
+func (st *ModelStore) RegisterModel(m ModelInterface) *Model {
+return st.RegisterModelWithConnection(m,GetConnectionStore().Last())
+}
+func (st *ModelStore) RegisterModelWithConnection(m ModelInterface,conn * Connection) *Model {
 	modelname:=ModelName(m)
 	mod := new(Model)
 	mod.tablename = m.TableName()

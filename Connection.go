@@ -20,4 +20,9 @@ func (cs * ConnectionStore) RegisterConnection(c * Connection) * Connection {
 	return c
 }
 
+func (cs * ConnectionStore) Last() *Connection {
+	return (*cs)[i]
+}
+
 func GetConnectionStore() *ConnectionStore {return &_ConnectionStore }
+
