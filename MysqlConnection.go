@@ -9,14 +9,19 @@ import (
 	"container/vector"
 )
 
-type mysqlConnector struct {
+type MysqlConnector struct {
 	conn *mysql.MySQLInstance
 }
 
+func (e *MysqlConnector) Close() {
+	e.conn.Quit();
+}
 
-func (e *mysqlConnector) Open(conStr string) bool {
+
+
+func (e *MysqlConnector) Open(connectionString string) bool {
 	fmt.Println("Plop")
-	tab := strings.Split(conStr, "/", 0)
+	tab := strings.Split(connectionString, "/", 0)
 	db := tab[len(tab)-1]
 	tab2 := strings.Split(tab[2], "@", 2)
 	tab = strings.Split(tab2[0], ":", 0)
@@ -38,7 +43,7 @@ func (e *mysqlConnector) Open(conStr string) bool {
 
 
 
-func (e *mysqlConnector) Query(r *Relation) string {
+func (e *MysqlConnector) Query(r *Relation) *vector.Vector {
 	res, err := e.conn.Query(mysql_query(r))
 	if err != nil {
 		fmt.Printf("%s\n", err)
@@ -48,7 +53,7 @@ func (e *mysqlConnector) Query(r *Relation) string {
 	fmt.Println(res.FieldCount)
 
 	fmt.Println(len(res.ResultSet.Rows))
-	var ret vector.Vector
+	ret :=new(vector.Vector)
 	tmp := make(map[string]Value)
 	for rowmap := res.FetchRowMap(); rowmap != nil; rowmap = res.FetchRowMap() {
 		fmt.Printf("%#v\n", rowmap)
@@ -71,36 +76,39 @@ func (e *mysqlConnector) Query(r *Relation) string {
 		ret.Push(tmp)
 	}
 	fmt.Printf("%#v\n",ret)
-	return "plip"
+	return ret
 }
 
-func OpenMysql(conStr string) *mysqlConnector {
-	db := new(mysqlConnector)
+func OpenMysql(conStr string) Connection {
+	db:= (new(MysqlConnector))
 	db.Open(conStr)
 	return db
 }
 
 
 func  mysql_query(r * Relation) (sql string) {
-	sql = "Select * from " + r.table + " where ( "
-	for _, ss := range r.conditions {
-		sql += ss
-		if ss != r.conditions.Last() {
-			sql += " ) AND ( "
+	sql = "Select * from " + r.table
+	if r.conditions.Len() > 0 {
+		sql+=" where ( "
+		for _, ss := range r.conditions {
+			sql += ss
+			if ss != r.conditions.Last() {
+				sql += " ) AND ( "
+			}
 		}
-	}
-
 	sql += " )"
+	}
 	if (r.order_field.Len()>0){
-		sql+="ORDER BY"
+		sql+=" ORDER BY "
 			for i, ss := range r.order_field {
 				sql += ss+" "+r.order_direction[i]
 			}
 	}
 
 	if r.limit_count > 0 {
-		sql+="LIMIT "+fmt.Sprint(r.limit_offset)+", "+fmt.Sprint(r.limit_count)
+		sql+=" LIMIT "+fmt.Sprint(r.limit_offset)+", "+fmt.Sprint(r.limit_count)
 	}
+	fmt.Println(sql)
 	sql +=";"
 	return
 }

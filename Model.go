@@ -2,7 +2,7 @@ package gouda
 
 import (
 	"reflect"
-//	"fmt"
+	"fmt"
 	"strings"
 )
 /** Types **/
@@ -64,24 +64,27 @@ func (m *Model) AttributesNames() (ret  []string) {
 	return ret
 }
 
+func (m *Model) First() string {//*interface{} {
+	q:=NewRelation(m.tablename).First();
+	ret:=m.connection.Query(q);
+	fmt.Println(ret);
+	return "test"
+}
+
+
+/** ModelInterface **/
+
 func ModelName(m ModelInterface ) (ret string) {
 	t:=reflect.Typeof(m).String()
 	tab:=strings.Split(t,".",0)
 	return tab[len(tab)-1]+"-"+m.TableName()
 }
 
-/** ModelInterface **/
-
 func M(m ModelInterface) *Model {
 	modelname:=ModelName(m)
 	if model,present:=_ModelStore[modelname]; present {
 	return model
 	}
-/*	mod := new(Model)
-	mod.tablename = m.TableName()
-	mod.attributes = attributes(m)
-	_ModelStore[modelname]=mod
-	*/
 	return GetModelStore().RegisterModel(m)
 
 }

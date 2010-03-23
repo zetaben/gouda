@@ -15,7 +15,10 @@ type Personne struct {
 
 func (p Personne) TableName() string { return "personne" }
 
+
 func TestAttributes(t *testing.T) {
+	conn:=gouda.OpenMysql("mysql://root:@localhost:3306/test_db")
+	gouda.GetConnectionStore().RegisterConnection(&conn)
 	p := new(Personne)
 	attr := gouda.M(p).Attributes()
 	types := map[string]reflect.Type{"Nom": &reflect.StringType{}, "Id": &reflect.IntType{}} //,"Age":&reflect.FloatType{}}
@@ -34,6 +37,8 @@ func TestAttributes(t *testing.T) {
 
 
 func TestAttributesName(t *testing.T) {
+	conn:=gouda.OpenMysql("mysql://root:@localhost:3306/test_db")
+	gouda.GetConnectionStore().RegisterConnection(&conn)
 	p := new(Personne)
 	attr := gouda.M(p).AttributesNames()
 	names := []string{"Nom","Id"}
@@ -60,6 +65,8 @@ func TestAttributesName(t *testing.T) {
 
 
 func TestModelName(t *testing.T) {
+	conn:=gouda.OpenMysql("mysql://root:@localhost:3306/test_db")
+	gouda.GetConnectionStore().RegisterConnection(&conn)
 	p := new(Personne)
 	if fname:=gouda.ModelName(p);fname!="Personne-personne" {
 		  t.Error("wrong name found : "+fname)
@@ -69,6 +76,11 @@ func TestModelName(t *testing.T) {
 	if fname:=gouda.ModelName(pp);fname!="Personne-personne" {
 		  t.Error("wrong name found : "+fname)
 	}
+}
+
+func TestModelFetch(t *testing.T){
+	p := new(Personne)
+	gouda.M(p).First();
 }
 
 func compare(a, b map[string]reflect.Type) bool {
