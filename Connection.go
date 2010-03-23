@@ -7,4 +7,17 @@ type Connection interface {
 }
 
 
+type ConnectionStore []*Connection
 
+//TODO : Vector Type
+var _ConnectionStore=make(ConnectionStore,10)
+var i=0
+
+
+func (cs * ConnectionStore) RegisterConnection(c * Connection) * Connection {
+	(*cs)[i]=c
+	i++
+	return c
+}
+
+func GetConnectionStore() *ConnectionStore {return &_ConnectionStore }
