@@ -80,7 +80,10 @@ func TestModelName(t *testing.T) {
 
 func TestModelFetch(t *testing.T){
 	p := new(Personne)
-	gouda.M(p).First();
+	z:=gouda.M(p).First().(Personne)
+
+	fmt.Println(z.Id)
+	fmt.Println(z)
 }
 
 func compare(a, b map[string]reflect.Type) bool {
