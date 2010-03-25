@@ -2,7 +2,7 @@ package gouda
 
 import (
 	"reflect"
-	"fmt"
+//	"fmt"
 	"strings"
 )
 /** Types **/
@@ -66,34 +66,35 @@ func (m *Model) AttributesNames() (ret []string) {
 	return ret
 }
 
+func (m *Model) Last() interface{} {
+	q := NewRelation(m.tablename).Order(strings.ToLower(m.AttributesNames()[len(m.attributes)-1]),"desc").First()
+	ret := m.connection.Query(q)
+	v := ret.At(0).(map[string]Value)
+	return m.translateObject(v);
+}
+
 func (m *Model) First() interface{} {
 	q := NewRelation(m.tablename).First()
 	ret := m.connection.Query(q)
 	v := ret.At(0).(map[string]Value)
-	fmt.Println(ret)
+	return m.translateObject(v);
+}
+
+func (m * Model) translateObject(v map[string]Value) interface{} {
 	p:=reflect.MakeZero(m.runtype).(*reflect.StructValue)
 	for lbl, _ := range m.Attributes() {
-//		fmt.Println(lbl)
-//		fmt.Println(typ)
 		vl := v[strings.ToLower(lbl)]
 		switch vl.Kind() {
 		case IntKind:
 			tmp:=reflect.NewValue(1).(*reflect.IntValue)
 			tmp.Set(int(vl.Int()))
-//			fmt.Println("FIL "+lbl)
-//			fmt.Println(reflect.MakeZero(m.runtype))
 			p.FieldByName(lbl).SetValue(tmp)
-//			fmt.Println(vl.Int());
 		case StringKind:
-			fmt.Println(vl.String());
 			tmp:=reflect.NewValue("").(*reflect.StringValue)
 			tmp.Set(string(vl.String()))
-//			fmt.Println("FIL "+lbl)
-//			fmt.Println(reflect.MakeZero(m.runtype))
 			p.FieldByName(lbl).SetValue(tmp)
 		}
 	}
-//	fmt.Printf("%#v\n",p)
 	return p.Interface()
 }
 

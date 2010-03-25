@@ -81,7 +81,9 @@ func TestModelName(t *testing.T) {
 func TestModelFetch(t *testing.T){
 	p := new(Personne)
 	z:=gouda.M(p).First().(Personne)
-
+	fmt.Println(z.Id)
+	fmt.Println(z)
+	z=gouda.M(p).Last().(Personne)
 	fmt.Println(z.Id)
 	fmt.Println(z)
 }
