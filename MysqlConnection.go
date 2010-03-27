@@ -20,13 +20,12 @@ func (e *MysqlConnector) Close() {
 
 
 func (e *MysqlConnector) Open(connectionString string) bool {
-	fmt.Println("Plop")
 	tab := strings.Split(connectionString, "/", 0)
 	db := tab[len(tab)-1]
 	tab2 := strings.Split(tab[2], "@", 2)
 	tab = strings.Split(tab2[0], ":", 0)
-	fmt.Println(tab)
-	fmt.Println(tab2)
+//	fmt.Println(tab)
+//	fmt.Println(tab2)
 	user := tab[0]
 	pass := tab[1]
 
@@ -49,20 +48,20 @@ func (e *MysqlConnector) Query(r *Relation) *vector.Vector {
 		fmt.Printf("%s\n", err)
 		os.Exit(1)
 	}
-	fmt.Println(res)
-	fmt.Println(res.FieldCount)
+//	fmt.Println(res)
+//	fmt.Println(res.FieldCount)
 
-	fmt.Println(len(res.ResultSet.Rows))
+//	fmt.Println(len(res.ResultSet.Rows))
 	ret :=new(vector.Vector)
 	tmp := make(map[string]Value)
 	for rowmap := res.FetchRowMap(); rowmap != nil; rowmap = res.FetchRowMap() {
-		fmt.Printf("%#v\n", rowmap)
-		fmt.Printf("%#v\n", res.ResultSet.Fields)
+//		fmt.Printf("%#v\n", rowmap)
+//		fmt.Printf("%#v\n", res.ResultSet.Fields)
 		for i := 0; i < len(rowmap); i++ {
 //			rowmap[rs.ResultSet.Fields[i].Name] = row.Data[i].Data
-			fmt.Println(res.ResultSet.Fields[i].Name)
+//			fmt.Println(res.ResultSet.Fields[i].Name)
 			var val Value;
-			fmt.Println(res.ResultSet.Fields[i].Type)
+//			fmt.Println(res.ResultSet.Fields[i].Type)
 			switch res.ResultSet.Fields[i].Type {
 			case mysql.MYSQL_TYPE_VAR_STRING:
 				val=SysString(rowmap[res.ResultSet.Fields[i].Name]).Value()
@@ -75,7 +74,7 @@ func (e *MysqlConnector) Query(r *Relation) *vector.Vector {
 		}
 		ret.Push(tmp)
 	}
-	fmt.Printf("%#v\n",ret)
+//	fmt.Printf("%#v\n",ret)
 	return ret
 }
 
@@ -108,7 +107,7 @@ func  mysql_query(r * Relation) (sql string) {
 	if r.limit_count > 0 {
 		sql+=" LIMIT "+fmt.Sprint(r.limit_offset)+", "+fmt.Sprint(r.limit_count)
 	}
-	fmt.Println(sql)
+//	fmt.Println(sql)
 	sql +=";"
 	return
 }

@@ -3,7 +3,7 @@ package gouda_test
 import (
 	"gouda"
 	"testing"
-	"fmt"
+//	"fmt"
 )
 
 func TestIntValue(t *testing.T) {
@@ -18,7 +18,7 @@ func TestIntValue(t *testing.T) {
 	if f.Kind()!=gouda.IntKind {
 		t.Error("Not of IntKind")
 	}
-	fmt.Printf("%#v\n",f)
+//	fmt.Printf("%#v\n",f)
 }
 
 func TestStringValue(t *testing.T) {
@@ -33,5 +33,5 @@ func TestStringValue(t *testing.T) {
 	if f.Kind()!=gouda.StringKind {
 		t.Error("Not of StringKind")
 	}
-	fmt.Printf("%#v\n",f)
+//	fmt.Printf("%#v\n",f)
 }
