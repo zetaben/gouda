@@ -2,7 +2,7 @@ package gouda
 
 import (
 	"reflect"
-//	"fmt"
+	//	"fmt"
 	"strings"
 )
 /** Types **/
@@ -13,9 +13,9 @@ type ModelInterface interface {
 
 type Model struct {
 	tablename  string
-	identifier  string
+	identifier string
 	attributes map[string]reflect.Type
-	runtype  reflect.Type
+	runtype    reflect.Type
 	connection *Connection
 }
 
@@ -25,24 +25,24 @@ var _ModelStore = make(ModelStore)
 
 /** NullModel **/
 
-type NullModel struct {}
+type NullModel struct{}
 
-func (n NullModel) TableName() string {return "NilTable create a TableName"}
+func (n NullModel) TableName() string { return "NilTable create a TableName" }
 
-func (n NullModel) Identifier() string {return "Id"}
+func (n NullModel) Identifier() string { return "Id" }
 
 
 /** utils **/
 
-func attributes(m interface{}) (map[string]reflect.Type,reflect.Type) {
+func attributes(m interface{}) (map[string]reflect.Type, reflect.Type) {
 	var st *reflect.StructType
 	var typ reflect.Type
 	if _, ok := reflect.Typeof(m).(*reflect.PtrType); ok {
 		typ = reflect.Typeof(m).(*reflect.PtrType).Elem()
 	} else {
-		typ =reflect.Typeof(m);
+		typ = reflect.Typeof(m)
 	}
-		st = typ.(*reflect.StructType)
+	st = typ.(*reflect.StructType)
 
 	//fmt.Println(st.NumField())
 
@@ -56,7 +56,7 @@ func attributes(m interface{}) (map[string]reflect.Type,reflect.Type) {
 		}
 	}
 
-	return ret,typ
+	return ret, typ
 }
 
 /** Model **/
@@ -78,30 +78,40 @@ func (m *Model) AttributesNames() (ret []string) {
 }
 
 func (m *Model) Last() interface{} {
-	q := NewRelation(m.tablename).Order(strings.ToLower(m.identifier),"desc").First()
+	q := NewRelation(m.tablename).Order(strings.ToLower(m.identifier), "desc").First()
 	ret := m.connection.Query(q)
 	v := ret.At(0).(map[string]Value)
-	return m.translateObject(v);
+	return m.translateObject(v)
 }
 
 func (m *Model) First() interface{} {
 	q := NewRelation(m.tablename).First()
 	ret := m.connection.Query(q)
 	v := ret.At(0).(map[string]Value)
-	return m.translateObject(v);
+	return m.translateObject(v)
 }
 
-func (m * Model) translateObject(v map[string]Value) interface{} {
-	p:=reflect.MakeZero(m.runtype).(*reflect.StructValue)
+func (m *Model) All() []interface{} {
+	q := NewRelation(m.tablename)
+	ret := m.connection.Query(q)
+	v := make([]interface{}, ret.Len())
+	for i := 0; i < ret.Len(); i++ {
+		v[i] = m.translateObject(ret.At(i).(map[string]Value))
+	}
+	return v
+}
+
+func (m *Model) translateObject(v map[string]Value) interface{} {
+	p := reflect.MakeZero(m.runtype).(*reflect.StructValue)
 	for lbl, _ := range m.Attributes() {
 		vl := v[strings.ToLower(lbl)]
 		switch vl.Kind() {
 		case IntKind:
-			tmp:=reflect.NewValue(1).(*reflect.IntValue)
+			tmp := reflect.NewValue(1).(*reflect.IntValue)
 			tmp.Set(int(vl.Int()))
 			p.FieldByName(lbl).SetValue(tmp)
 		case StringKind:
-			tmp:=reflect.NewValue("").(*reflect.StringValue)
+			tmp := reflect.NewValue("").(*reflect.StringValue)
 			tmp.Set(string(vl.String()))
 			p.FieldByName(lbl).SetValue(tmp)
 		}
@@ -135,14 +145,15 @@ func GetModelStore() *ModelStore { return &_ModelStore }
 func (st *ModelStore) RegisterModel(m ModelInterface) *Model {
 	return st.RegisterModelWithConnection(m, GetConnectionStore().Last())
 }
+
 func (st *ModelStore) RegisterModelWithConnection(m ModelInterface, conn *Connection) *Model {
 	modelname := ModelName(m)
 	mod := new(Model)
 	mod.tablename = m.TableName()
 	mod.identifier = m.Identifier()
-	attr,run :=attributes(m)
-	mod.attributes =  attr
-	mod.runtype =  run
+	attr, run := attributes(m)
+	mod.attributes = attr
+	mod.runtype = run
 	mod.connection = conn
 	(*st)[modelname] = mod
 	return mod

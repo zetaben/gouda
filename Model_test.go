@@ -83,44 +83,49 @@ func TestModelFetch(t *testing.T) {
 	need_connection()
 	p := new(Personne)
 	z := gouda.M(p).First().(Personne)
-//	fmt.Println(z.Id)
-//	fmt.Println(z)
-	if(z.Id!=1){
-		t.Error("wrong personne found : Id : " +fmt.Sprint(z.Id))
+	//	fmt.Println(z.Id)
+	//	fmt.Println(z)
+	if z.Id != 1 {
+		t.Error("wrong personne found : Id : " + fmt.Sprint(z.Id))
 	}
 
 	z = gouda.M(p).Last().(Personne)
-//	fmt.Println(z.Id)
-//	fmt.Println(z)
-	if(z.Id!=2){
-		t.Error("wrong personne found : Id : " +fmt.Sprint(z.Id))
+	//	fmt.Println(z.Id)
+	//	fmt.Println(z)
+	if z.Id != 2 {
+		t.Error("wrong personne found : Id : " + fmt.Sprint(z.Id))
+	}
+
+	tab := gouda.M(p).All()
+	if len(tab) != 2 {
+		t.Error("Wrong Fetched Size")
 	}
 }
 
 func need_connection() {
-	if(!conn_ok){
-	init_mysql()
-	conn_ok=true
+	if !conn_ok {
+		init_mysql()
+		conn_ok = true
 	}
 
 }
 
 
 func init_mysql() {
-	r,w,err := os.Pipe()
-	if err !=nil {
-	      panic("%v",err)
-        }
+	r, w, err := os.Pipe()
+	if err != nil {
+		panic("%v", err)
+	}
 
 	fmt.Print("Initializing DB... ")
-	pid,_:=os.ForkExec("/usr/bin/mysql", []string{"/usr/bin/mysql", "test_db"},os.Environ(),"/versatile",[]*os.File{r, os.Stdout, os.Stderr})
-//	fmt.Fprintln(w,"show tables;");
-	fmt.Fprintln(w,"DROP TABLE personne;");
-	fmt.Fprintln(w,"CREATE TABLE `personne` ( `id` int(11) NOT NULL, `nom` varchar(255) default NULL,    PRIMARY KEY  (`id`)  );");
-	fmt.Fprintln(w,"INSERT INTO `personne` VALUES (1,'toto');");
-	fmt.Fprintln(w,"INSERT INTO `personne` VALUES (2,'titi');");
-	w.Close();
-	os.Wait(pid,0)
+	pid, _ := os.ForkExec("/usr/bin/mysql", []string{"/usr/bin/mysql", "test_db"}, os.Environ(), "/versatile", []*os.File{r, os.Stdout, os.Stderr})
+	//	fmt.Fprintln(w,"show tables;");
+	fmt.Fprintln(w, "DROP TABLE personne;")
+	fmt.Fprintln(w, "CREATE TABLE `personne` ( `id` int(11) NOT NULL, `nom` varchar(255) default NULL,    PRIMARY KEY  (`id`)  );")
+	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (1,'toto');")
+	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (2,'titi');")
+	w.Close()
+	os.Wait(pid, 0)
 	fmt.Println("Finished!")
 
 	conn := gouda.OpenMysql("mysql://root:@localhost:3306/test_db")
