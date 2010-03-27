@@ -12,6 +12,7 @@ import (
 type Personne struct {
 	Nom string
 	Id  int
+	gouda.NullModel
 }
 
 var conn_ok bool = false

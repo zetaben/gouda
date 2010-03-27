@@ -8,10 +8,12 @@ import (
 /** Types **/
 type ModelInterface interface {
 	TableName() string
+	Identifier() string
 }
 
 type Model struct {
 	tablename  string
+	identifier  string
 	attributes map[string]reflect.Type
 	runtype  reflect.Type
 	connection *Connection
@@ -20,6 +22,15 @@ type Model struct {
 type ModelStore map[string]*Model
 
 var _ModelStore = make(ModelStore)
+
+/** NullModel **/
+
+type NullModel struct {}
+
+func (n NullModel) TableName() string {return "NilTable create a TableName"}
+
+func (n NullModel) Identifier() string {return "Id"}
+
 
 /** utils **/
 
@@ -67,7 +78,7 @@ func (m *Model) AttributesNames() (ret []string) {
 }
 
 func (m *Model) Last() interface{} {
-	q := NewRelation(m.tablename).Order(strings.ToLower(m.AttributesNames()[len(m.attributes)-1]),"desc").First()
+	q := NewRelation(m.tablename).Order(strings.ToLower(m.identifier),"desc").First()
 	ret := m.connection.Query(q)
 	v := ret.At(0).(map[string]Value)
 	return m.translateObject(v);
@@ -128,6 +139,7 @@ func (st *ModelStore) RegisterModelWithConnection(m ModelInterface, conn *Connec
 	modelname := ModelName(m)
 	mod := new(Model)
 	mod.tablename = m.TableName()
+	mod.identifier = m.Identifier()
 	attr,run :=attributes(m)
 	mod.attributes =  attr
 	mod.runtype =  run
