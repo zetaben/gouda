@@ -2,7 +2,7 @@ package gouda
 
 import (
 	"reflect"
-	//	"fmt"
+//	"fmt"
 	"strings"
 )
 /** Types **/
@@ -17,6 +17,11 @@ type Model struct {
 	attributes map[string]reflect.Type
 	runtype    reflect.Type
 	connection *Connection
+}
+
+type ModelRelation struct {
+	model *Model
+	relation *Relation
 }
 
 type ModelStore map[string]*Model
@@ -157,4 +162,57 @@ func (st *ModelStore) RegisterModelWithConnection(m ModelInterface, conn *Connec
 	mod.connection = conn
 	(*st)[modelname] = mod
 	return mod
+}
+
+/** Model RelationLike methods**/
+
+func (m *Model) newRelation() *ModelRelation{
+	mr:=new(ModelRelation)
+	mr.model=m
+	mr.relation=new(Relation)
+	mr.relation.Table(m.tablename)
+	return mr
+}
+
+func (m *Model) Where(x string) *ModelRelation{
+	return m.newRelation().Where(x)
+}
+
+func (m *Model) Order(x,y string) *ModelRelation{
+	return m.newRelation().Order(x,y)
+}
+
+/** ModelRelation **/
+
+func (r *ModelRelation) Where(x string) *ModelRelation {
+	r.relation.Where(x)
+	return r
+}
+
+func (r *ModelRelation) Order(x,y string) *ModelRelation {
+	r.relation.Order(x,y)
+	return r
+}
+
+func (r *ModelRelation) First() interface{} {
+	q:=r.relation.First()
+	ret := r.model.connection.Query(q)
+	v := ret.At(0).(map[string]Value)
+	return r.model.translateObject(v)
+}
+
+func (r *ModelRelation) Last() interface{} {
+	q:=r.relation.Order(r.model.identifier,"DESC").First()
+	ret := r.model.connection.Query(q)
+	v := ret.At(0).(map[string]Value)
+	return r.model.translateObject(v)
+}
+
+func (r *ModelRelation) All() []interface{} {
+	ret := r.model.connection.Query(r.relation)
+	v := make([]interface{}, ret.Len())
+	for i := 0; i < ret.Len(); i++ {
+		v[i] = r.model.translateObject(ret.At(i).(map[string]Value))
+	}
+	return v
 }

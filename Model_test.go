@@ -102,6 +102,51 @@ func TestModelFetch(t *testing.T) {
 	}
 }
 
+func TestModelRelationFetch(t *testing.T) {
+	var p Personne;
+	Personnes:=gouda.M(p)
+	toto:=Personnes.Where("nom = 'toto'").First().(Personne)
+	if toto.Nom != "toto" || toto.Id != 1 {
+		t.Error("Not Found toto")
+	}
+	toto=Personnes.Where("nom = 'toto'").Last().(Personne)
+	if toto.Nom != "toto" || toto.Id != 1 {
+		t.Error("Not Found toto")
+	}
+
+	totos:=Personnes.Where("nom = 'toto'").All()
+
+	if len(totos) != 1 {
+		t.Error("Wrong Fetched Size, fetched :"+fmt.Sprint(len(totos)))
+	}
+	toto=totos[0].(Personne)
+	if toto.Nom != "toto" || toto.Id != 1 {
+		t.Error("Not Found toto")
+	}
+}
+
+func TestModelRelationFetchOrder(t *testing.T) {
+	var p Personne;
+	Personnes:=gouda.M(p);
+	need_connection();
+	totos:=Personnes.Order("nom","asc").All()
+
+	if len(totos) != 2 {
+		t.Error("Wrong Fetched Size, fetched :"+fmt.Sprint(len(totos)))
+	}
+	i:=0
+
+	if totos[i].(Personne).Nom!="titi" {
+		t.Error("Not Found titi "+fmt.Sprint(totos[i].(Personne)))
+	}
+
+	i++
+
+	if totos[i].(Personne).Nom!="toto" {
+		t.Error("Not Found toto "+fmt.Sprint(totos[i].(Personne)))
+	}
+}
+
 func need_connection() {
 	if !conn_ok {
 		init_mysql()

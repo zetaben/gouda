@@ -53,8 +53,8 @@ func (e *MysqlConnector) Query(r *Relation) *vector.Vector {
 
 //	fmt.Println(len(res.ResultSet.Rows))
 	ret :=new(vector.Vector)
-	tmp := make(map[string]Value)
 	for rowmap := res.FetchRowMap(); rowmap != nil; rowmap = res.FetchRowMap() {
+		tmp := make(map[string]Value)
 //		fmt.Printf("%#v\n", rowmap)
 //		fmt.Printf("%#v\n", res.ResultSet.Fields)
 		for i := 0; i < len(rowmap); i++ {
@@ -107,7 +107,7 @@ func  mysql_query(r * Relation) (sql string) {
 	if r.limit_count > 0 {
 		sql+=" LIMIT "+fmt.Sprint(r.limit_offset)+", "+fmt.Sprint(r.limit_count)
 	}
-//	fmt.Println(sql)
+	fmt.Println(sql)
 	sql +=";"
 	return
 }
