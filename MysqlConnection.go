@@ -107,7 +107,7 @@ func  mysql_query(r * Relation) (sql string) {
 	if r.limit_count > 0 {
 		sql+=" LIMIT "+fmt.Sprint(r.limit_offset)+", "+fmt.Sprint(r.limit_count)
 	}
-	fmt.Println(sql)
+//	fmt.Println(sql)
 	sql +=";"
 	return
 }
