@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+type RequestKind int
+const (
+SELECT RequestKind = iota
+UPDATE
+INSERT
+COUNT
+)
+
 type Relation struct {
 	conditions vector.StringVector
 	table      string
@@ -14,6 +22,16 @@ type Relation struct {
 	limit_count int
 	order_field vector.StringVector
 	order_direction vector.StringVector
+	kind	RequestKind
+	attributes vector.StringVector
+}
+
+func (r *Relation) Count(fields []string) *Relation {
+	for _,s:=range fields {
+	r.attributes.Push(s)
+	}
+	r.kind=COUNT
+	return r
 }
 
 func (r *Relation) Where(s string) *Relation {
@@ -80,6 +98,7 @@ func From(t interface{}) (r *Relation) { return NewRelation(t) }
 
 func NewRelation(t interface{}) (r *Relation) {
 	r = new(Relation)
+	r.kind=SELECT
 	switch  typ := t.(type) {
 	case string:
 	r.Table(t.(string));

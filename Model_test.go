@@ -12,6 +12,7 @@ import (
 type Personne struct {
 	Nom string
 	Id  int
+	Age  int
 	gouda.NullModel
 }
 
@@ -43,7 +44,7 @@ func TestAttributesName(t *testing.T) {
 	need_connection()
 	p := new(Personne)
 	attr := gouda.M(p).AttributesNames()
-	names := []string{"Nom", "Id"}
+	names := []string{"Nom", "Id","Age"}
 	sort.StringArray(attr).Sort()
 	sort.StringArray(names).Sort()
 	if len(names) != len(attr) {
@@ -104,6 +105,7 @@ func TestModelFetch(t *testing.T) {
 
 func TestModelRelationFetch(t *testing.T) {
 	var p Personne;
+	need_connection();
 	Personnes:=gouda.M(p)
 	toto:=Personnes.Where("nom = 'toto'").First().(Personne)
 	if toto.Nom != "toto" || toto.Id != 1 {
@@ -127,8 +129,8 @@ func TestModelRelationFetch(t *testing.T) {
 
 func TestModelRelationFetchOrder(t *testing.T) {
 	var p Personne;
-	Personnes:=gouda.M(p);
 	need_connection();
+	Personnes:=gouda.M(p);
 	totos:=Personnes.Order("nom","asc").All()
 
 	if len(totos) != 2 {
@@ -145,6 +147,24 @@ func TestModelRelationFetchOrder(t *testing.T) {
 	if totos[i].(Personne).Nom!="toto" {
 		t.Error("Not Found toto "+fmt.Sprint(totos[i].(Personne)))
 	}
+}
+func TestModelRelationFetchCount(t *testing.T) {
+	var p Personne;
+	need_connection();
+	Personnes:=gouda.M(p);
+	if Personnes.Count()!=2 {
+		t.Error("Counting Personne failed, counted : "+fmt.Sprint(Personnes.Count()))
+	}
+
+
+	if Personnes.Where("nom = 'toto' ").Count()!=1	{
+		t.Error("Counting toto failed, counted : "+fmt.Sprint(Personnes.Count()))
+	}
+
+	if Personnes.Count([]string{"age"}) != 1 {
+		t.Error("Counting toto age failed, counted : "+fmt.Sprint(Personnes.Count([]string{"age"})))
+	}
+
 }
 
 func need_connection() {
@@ -166,9 +186,9 @@ func init_mysql() {
 	pid, _ := os.ForkExec("/usr/bin/mysql", []string{"/usr/bin/mysql", "test_db"}, os.Environ(), "/versatile", []*os.File{r, os.Stdout, os.Stderr})
 	//	fmt.Fprintln(w,"show tables;");
 	fmt.Fprintln(w, "DROP TABLE personne;")
-	fmt.Fprintln(w, "CREATE TABLE `personne` ( `id` int(11) NOT NULL, `nom` varchar(255) default NULL,    PRIMARY KEY  (`id`)  );")
-	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (1,'toto');")
-	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (2,'titi');")
+	fmt.Fprintln(w, "CREATE TABLE `personne` ( `id` int(11) NOT NULL, `nom` varchar(255) default NULL,  age int(3) default NULL,   PRIMARY KEY  (`id`)  );")
+	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (1,'toto',23);")
+	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (2,'titi',NULL);")
 	w.Close()
 	os.Wait(pid, 0)
 	fmt.Println("Finished!")

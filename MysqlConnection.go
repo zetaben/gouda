@@ -65,7 +65,7 @@ func (e *MysqlConnector) Query(r *Relation) *vector.Vector {
 			switch res.ResultSet.Fields[i].Type {
 			case mysql.MYSQL_TYPE_VAR_STRING:
 				val=SysString(rowmap[res.ResultSet.Fields[i].Name]).Value()
-			case mysql.MYSQL_TYPE_LONG:
+			case mysql.MYSQL_TYPE_LONG,mysql.MYSQL_TYPE_LONGLONG:
 				t,_:=strconv.Atoi(rowmap[res.ResultSet.Fields[i].Name])
 				val=SysInt(t).Value()
 			}
@@ -86,7 +86,21 @@ func OpenMysql(conStr string) Connection {
 
 
 func  mysql_query(r * Relation) (sql string) {
-	sql = "Select * from " + r.table
+	sql = "Select "
+	if(r.kind==COUNT && r.attributes.Len()>0){
+		sql+=" COUNT( "
+		for _, ss := range r.attributes {
+			sql += ss
+			if ss != r.attributes.Last() {
+				sql += ", "
+			}
+		}
+		sql+=" ) as _count"
+	}else{
+	sql+=" * "
+	}
+
+	sql+=" from " + r.table
 	if r.conditions.Len() > 0 {
 		sql+=" where ( "
 		for _, ss := range r.conditions {

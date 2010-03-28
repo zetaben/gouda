@@ -182,6 +182,10 @@ func (m *Model) Order(x,y string) *ModelRelation{
 	return m.newRelation().Order(x,y)
 }
 
+func (m *Model) Count(fields ...[]string) int{
+	return m.newRelation().Count(fields)
+}
+
 /** ModelRelation **/
 
 func (r *ModelRelation) Where(x string) *ModelRelation {
@@ -215,4 +219,20 @@ func (r *ModelRelation) All() []interface{} {
 		v[i] = r.model.translateObject(ret.At(i).(map[string]Value))
 	}
 	return v
+}
+
+
+func (r *ModelRelation) Count(fields ...[]string) int {
+	q:=r.relation
+	if(len(fields)==0){
+		field:=make([]string,1)
+		field[0]=r.model.identifier
+		q=r.relation.Count(field)
+	}else{
+		q=r.relation.Count(fields[0])
+	}
+
+	ret := r.model.connection.Query(q)
+	v := ret.At(0).(map[string]Value)
+	return int(v["_count"].Int())
 }
