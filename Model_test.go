@@ -148,6 +148,7 @@ func TestModelRelationFetchOrder(t *testing.T) {
 		t.Error("Not Found toto "+fmt.Sprint(totos[i].(Personne)))
 	}
 }
+
 func TestModelRelationFetchCount(t *testing.T) {
 	var p Personne;
 	need_connection();
@@ -165,6 +166,27 @@ func TestModelRelationFetchCount(t *testing.T) {
 		t.Error("Counting toto age failed, counted : "+fmt.Sprint(Personnes.Count([]string{"age"})))
 	}
 
+}
+
+func TestModelRelationRefresh(t *testing.T) {
+	var p Personne;
+	need_connection();
+	Personnes:=gouda.M(p);
+	toto:=Personnes.First().(Personne)
+	toto=Personnes.Refresh(toto).(Personne)
+	if toto.Id!=1 {
+		t.Error("Refresh Failed, "+fmt.Sprint(toto))
+	}
+
+	toto=Personnes.Refresh(&toto).(Personne)
+	if toto.Id!=1 {
+		t.Error("Refresh Failed, "+fmt.Sprint(toto))
+	}
+
+	toto=gouda.Refresh(&toto).(Personne)
+	if toto.Id!=1 {
+		t.Error("Refresh Failed, "+fmt.Sprint(toto))
+	}
 }
 
 func need_connection() {

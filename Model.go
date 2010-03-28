@@ -2,7 +2,7 @@ package gouda
 
 import (
 	"reflect"
-//	"fmt"
+	"fmt"
 	"strings"
 )
 /** Types **/
@@ -106,6 +106,19 @@ func (m *Model) All() []interface{} {
 	return v
 }
 
+func (m *Model) Refresh(a interface{}) interface{} {
+	st:=reflect.NewValue(a)
+	if p,ok:=st.(*reflect.PtrValue);ok {
+		st=p.Elem()
+	}
+
+	id:=fmt.Sprint(st.(*reflect.StructValue).FieldByName(m.identifier).(*reflect.IntValue).Get())
+	q := NewRelation(m.tablename).Where(m.identifier+" = '"+id+"'").First()
+	ret := m.connection.Query(q)
+	v := ret.At(0).(map[string]Value)
+	return m.translateObject(v)
+}
+
 func (m *Model) translateObject(v map[string]Value) interface{} {
 	p := reflect.MakeZero(m.runtype).(*reflect.StructValue)
 	for lbl, _ := range m.Attributes() {
@@ -124,6 +137,7 @@ func (m *Model) translateObject(v map[string]Value) interface{} {
 	return p.Interface()
 }
 
+func Refresh(a interface{}) interface{} { return M(a.(ModelInterface)).Refresh(a) }
 
 /** ModelInterface **/
 
