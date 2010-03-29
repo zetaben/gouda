@@ -15,6 +15,7 @@ type Model struct {
 	tablename  string
 	identifier string
 	attributes map[string]reflect.Type
+	object_cache map[int]map[string]Value
 	runtype    reflect.Type
 	connection *Connection
 }
@@ -112,30 +113,62 @@ func (m *Model) Refresh(a interface{}) interface{} {
 		st=p.Elem()
 	}
 
-	id:=fmt.Sprint(st.(*reflect.StructValue).FieldByName(m.identifier).(*reflect.IntValue).Get())
+	id:=fmt.Sprint(m.getId(st.(*reflect.StructValue)))
 	q := NewRelation(m.tablename).Where(m.identifier+" = '"+id+"'").First()
 	ret := m.connection.Query(q)
 	v := ret.At(0).(map[string]Value)
 	return m.translateObject(v)
 }
 
+func (m *Model) getId(st *reflect.StructValue) int {
+	return st.FieldByName(m.identifier).(*reflect.IntValue).Get()
+}
+
 func (m *Model) Save(a interface{}) interface{}{
-	st:=reflect.NewValue(a)
-	if p,ok:=st.(*reflect.PtrValue);ok {
-		st=p.Elem()
+	stv:=reflect.NewValue(a)
+	if p,ok:=stv.(*reflect.PtrValue);ok {
+		stv=p.Elem()
+	}
+	st:=stv.(*reflect.StructValue)
+	id:=m.getId(st)
+	if v,present := m.object_cache[id]; present {
+	if up:=m.buildUpdateMap(st,v); len(up) > 0 {
+	r:=new(Relation)
+	r.Table(m.tablename)
+	r.Update(up,m.identifier,id)
+	m.connection.Query(r)
+	}
+	return a
 	}
 
 	r:=new(Relation)
 	r.Table(m.tablename)
-	r.Insert(m.translateMap(st.(*reflect.StructValue)))
+	r.Insert(m.translateMap(st))
 	m.connection.Query(r)
 
 	//Ugly Hack to get Last Inserted Id
 	q := NewRelation(m.tablename).Order(strings.ToLower(m.identifier), "desc").First()
 	ret := m.connection.Query(q)
 	v := ret.At(0).(map[string]Value)
-	m.translateObjectValue(v,st.(*reflect.StructValue))
+	m.translateObjectValue(v,st)
 	return a
+}
+
+func (m *Model) buildUpdateMap(st *reflect.StructValue,old map[string]Value)  map[string]Value {
+	ret:=make(map[string]Value)
+	for attr,typ := range m.attributes {
+		switch typ.(type){
+		case *reflect.IntType:
+			if tmp:=st.FieldByName(attr).(*reflect.IntValue).Get() ;int(old[strings.ToLower(attr)].Int())!=tmp {
+			ret[attr]=SysInt(tmp).Value()
+			}
+		case *reflect.StringType:
+			if tmp:=st.FieldByName(attr).(*reflect.StringValue).Get() ;string(old[strings.ToLower(attr)].String())!=tmp {
+			ret[attr]=SysString(tmp).Value()
+			}
+		}
+	}
+return ret
 }
 
 func (m *Model) translateMap(obj *reflect.StructValue)  map[string]Value {
@@ -162,6 +195,7 @@ func (m *Model) translateObjectValue(v map[string]Value,p *reflect.StructValue) 
 	for lbl, _ := range m.Attributes() {
 		vl := v[strings.ToLower(lbl)]
 		switch vl.Kind() {
+		//TODO MakeZero ??
 		case IntKind:
 			tmp := reflect.NewValue(1).(*reflect.IntValue)
 			tmp.Set(int(vl.Int()))
@@ -172,6 +206,7 @@ func (m *Model) translateObjectValue(v map[string]Value,p *reflect.StructValue) 
 			p.FieldByName(lbl).SetValue(tmp)
 		}
 	}
+	m.object_cache[int(v[strings.ToLower(m.identifier)].Int())]=v
 	return p.Interface()
 
 }
@@ -214,6 +249,7 @@ func (st *ModelStore) RegisterModelWithConnection(m ModelInterface, conn *Connec
 	mod.attributes = attr
 	mod.runtype = run
 	mod.connection = conn
+	mod.object_cache = make( map[int]map[string]Value)
 	(*st)[modelname] = mod
 	return mod
 }

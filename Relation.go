@@ -25,6 +25,8 @@ type Relation struct {
 	kind	RequestKind
 	attributes vector.StringVector
 	values map[string]Value
+	id int
+	identifier_field string
 }
 
 func (r *Relation) Count(fields []string) *Relation {
@@ -38,6 +40,14 @@ func (r *Relation) Count(fields []string) *Relation {
 func (r *Relation) Insert(mp map[string]Value) *Relation {
 	r.kind=INSERT
 	r.values=mp
+	return r
+}
+
+func (r *Relation) Update(mp map[string]Value,identifier string,id int) *Relation {
+	r.kind=UPDATE
+	r.values=mp
+	r.id=id
+	r.identifier_field=identifier
 	return r
 }
 

@@ -210,6 +210,15 @@ func TestModelInsert(t *testing.T) {
 	if p.Id!=4 {
 		t.Error("Id not setted, found "+fmt.Sprint(p.Id))
 	}
+	p.Nom="plop"
+	Personnes.Save(&p);
+	if p.Id!=4 {
+		t.Error("Save should have updated not inserted!")
+	}
+	p=gouda.Refresh(&p).(Personne)
+	if p.Nom!="plop" {
+		t.Error("Not Updated !")
+	}
 }
 
 func init_mysql() {
