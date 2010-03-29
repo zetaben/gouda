@@ -198,6 +198,20 @@ func need_connection() {
 }
 
 
+func TestModelInsert(t *testing.T) {
+	var p Personne;
+	need_connection();
+	gouda.Save(&Personne{Id:3,Nom:"test",Age:12})
+	Personnes:=gouda.M(p);
+	p.Id=0;
+	p.Nom="tata";
+	p.Age=7;
+	Personnes.Save(&p);
+	if p.Id!=4 {
+		t.Error("Id not setted, found "+fmt.Sprint(p.Id))
+	}
+}
+
 func init_mysql() {
 	r, w, err := os.Pipe()
 	if err != nil {
@@ -208,7 +222,7 @@ func init_mysql() {
 	pid, _ := os.ForkExec("/usr/bin/mysql", []string{"/usr/bin/mysql", "test_db"}, os.Environ(), "/versatile", []*os.File{r, os.Stdout, os.Stderr})
 	//	fmt.Fprintln(w,"show tables;");
 	fmt.Fprintln(w, "DROP TABLE personne;")
-	fmt.Fprintln(w, "CREATE TABLE `personne` ( `id` int(11) NOT NULL, `nom` varchar(255) default NULL,  age int(3) default NULL,   PRIMARY KEY  (`id`)  );")
+	fmt.Fprintln(w, "CREATE TABLE `personne` ( `id` int(11) NOT NULL auto_increment, `nom` varchar(255) default NULL,  age int(3) default NULL,   PRIMARY KEY  (`id`)  );")
 	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (1,'toto',23);")
 	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (2,'titi',NULL);")
 	w.Close()

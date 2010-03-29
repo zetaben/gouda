@@ -9,6 +9,20 @@ import (
 	"container/vector"
 )
 
+/** Value **/
+
+func mysql_string(v Value) string {
+switch v.(type) {
+case *_Int:
+return fmt.Sprint(int(v.Int()))
+case *_String:
+return string(v.String())
+}
+return "UNRECHEABLE"
+}
+
+
+
 type MysqlConnector struct {
 	conn *mysql.MySQLInstance
 }
@@ -48,11 +62,14 @@ func (e *MysqlConnector) Query(r *Relation) *vector.Vector {
 		fmt.Printf("%s\n", err)
 		os.Exit(1)
 	}
+	ret :=new(vector.Vector)
+	if r.kind==INSERT {
+	return ret
+	}
 //	fmt.Println(res)
 //	fmt.Println(res.FieldCount)
 
 //	fmt.Println(len(res.ResultSet.Rows))
-	ret :=new(vector.Vector)
 	for rowmap := res.FetchRowMap(); rowmap != nil; rowmap = res.FetchRowMap() {
 		tmp := make(map[string]Value)
 //		fmt.Printf("%#v\n", rowmap)
@@ -86,6 +103,26 @@ func OpenMysql(conStr string) Connection {
 
 
 func  mysql_query(r * Relation) (sql string) {
+
+	if r.kind==INSERT {
+	sql="INSERT INTO "+r.table+" ("
+	i:=0
+	values:="( "
+	for k,v := range r.values {
+	i++
+	sql+=strings.ToLower(k)
+	values+="'"+mysql_string(v)+"'"
+	if i<len(r.values) {
+	sql+=", "
+	values+=", "
+	}
+	}
+
+	sql+=" ) VALUES "+values+" ); "
+
+	return
+	}
+
 	sql = "Select "
 	if(r.kind==COUNT && r.attributes.Len()>0){
 		sql+=" COUNT( "

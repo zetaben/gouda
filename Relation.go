@@ -24,6 +24,7 @@ type Relation struct {
 	order_direction vector.StringVector
 	kind	RequestKind
 	attributes vector.StringVector
+	values map[string]Value
 }
 
 func (r *Relation) Count(fields []string) *Relation {
@@ -31,6 +32,12 @@ func (r *Relation) Count(fields []string) *Relation {
 	r.attributes.Push(s)
 	}
 	r.kind=COUNT
+	return r
+}
+
+func (r *Relation) Insert(mp map[string]Value) *Relation {
+	r.kind=INSERT
+	r.values=mp
 	return r
 }
 

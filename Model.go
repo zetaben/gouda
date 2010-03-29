@@ -119,8 +119,46 @@ func (m *Model) Refresh(a interface{}) interface{} {
 	return m.translateObject(v)
 }
 
+func (m *Model) Save(a interface{}) interface{}{
+	st:=reflect.NewValue(a)
+	if p,ok:=st.(*reflect.PtrValue);ok {
+		st=p.Elem()
+	}
+
+	r:=new(Relation)
+	r.Table(m.tablename)
+	r.Insert(m.translateMap(st.(*reflect.StructValue)))
+	m.connection.Query(r)
+
+	//Ugly Hack to get Last Inserted Id
+	q := NewRelation(m.tablename).Order(strings.ToLower(m.identifier), "desc").First()
+	ret := m.connection.Query(q)
+	v := ret.At(0).(map[string]Value)
+	m.translateObjectValue(v,st.(*reflect.StructValue))
+	return a
+}
+
+func (m *Model) translateMap(obj *reflect.StructValue)  map[string]Value {
+	ret:=make(map[string]Value)
+	for attr,typ := range m.attributes {
+		switch typ.(type){
+		case *reflect.IntType:
+			ret[attr]=SysInt(obj.FieldByName(attr).(*reflect.IntValue).Get()).Value()
+		case *reflect.StringType:
+			ret[attr]=SysString(obj.FieldByName(attr).(*reflect.StringValue).Get()).Value()
+		case nil:
+			ret[attr]=new(_Null)
+		}
+	}
+	return ret
+}
+
 func (m *Model) translateObject(v map[string]Value) interface{} {
 	p := reflect.MakeZero(m.runtype).(*reflect.StructValue)
+	return m.translateObjectValue(v,p)
+}
+
+func (m *Model) translateObjectValue(v map[string]Value,p *reflect.StructValue) interface{} {
 	for lbl, _ := range m.Attributes() {
 		vl := v[strings.ToLower(lbl)]
 		switch vl.Kind() {
@@ -135,9 +173,11 @@ func (m *Model) translateObject(v map[string]Value) interface{} {
 		}
 	}
 	return p.Interface()
+
 }
 
 func Refresh(a interface{}) interface{} { return M(a.(ModelInterface)).Refresh(a) }
+func Save(a interface{}) interface{} { return M(a.(ModelInterface)).Save(a) }
 
 /** ModelInterface **/
 
