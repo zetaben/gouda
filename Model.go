@@ -124,6 +124,16 @@ func (m *Model) getId(st *reflect.StructValue) int {
 	return st.FieldByName(m.identifier).(*reflect.IntValue).Get()
 }
 
+func (m *Model) Delete(a interface{}) interface{}{
+	st:=reflect.NewValue(a)
+	if p,ok:=st.(*reflect.PtrValue);ok {
+		st=p.Elem()
+	}
+	id:=fmt.Sprint(m.getId(st.(*reflect.StructValue)))
+	q := NewRelation(m.tablename).Where(m.identifier+" = '"+id+"'").Delete()
+	m.connection.Query(q)
+	return a
+}
 func (m *Model) Save(a interface{}) interface{}{
 	stv:=reflect.NewValue(a)
 	if p,ok:=stv.(*reflect.PtrValue);ok {
@@ -213,6 +223,7 @@ func (m *Model) translateObjectValue(v map[string]Value,p *reflect.StructValue) 
 
 func Refresh(a interface{}) interface{} { return M(a.(ModelInterface)).Refresh(a) }
 func Save(a interface{}) interface{} { return M(a.(ModelInterface)).Save(a) }
+func Delete(a interface{}) interface{} { return M(a.(ModelInterface)).Delete(a) }
 
 /** ModelInterface **/
 

@@ -13,6 +13,7 @@ SELECT RequestKind = iota
 UPDATE
 INSERT
 COUNT
+DELETE
 )
 
 type Relation struct {
@@ -34,6 +35,11 @@ func (r *Relation) Count(fields []string) *Relation {
 	r.attributes.Push(s)
 	}
 	r.kind=COUNT
+	return r
+}
+
+func (r *Relation) Delete() *Relation {
+	r.kind=DELETE
 	return r
 }
 

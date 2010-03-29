@@ -198,7 +198,7 @@ func need_connection() {
 }
 
 
-func TestModelInsert(t *testing.T) {
+func TestModelInsertOrUpdate(t *testing.T) {
 	var p Personne;
 	need_connection();
 	gouda.Save(&Personne{Id:3,Nom:"test",Age:12})
@@ -218,6 +218,19 @@ func TestModelInsert(t *testing.T) {
 	p=gouda.Refresh(&p).(Personne)
 	if p.Nom!="plop" {
 		t.Error("Not Updated !")
+	}
+}
+func TestModelDelete(t *testing.T) {
+	var p Personne;
+	need_connection();
+	Personnes:=gouda.M(p);
+	Personnes.Delete(Personnes.First())
+	if len(Personnes.All()) != 3 {
+		t.Error("Not deleted ! counting :"+fmt.Sprint(len(Personnes.All())))
+	}
+	gouda.Delete(Personnes.First())
+	if len(Personnes.All()) != 2 {
+		t.Error("Not deleted ! counting :"+fmt.Sprint(len(Personnes.All())))
 	}
 }
 

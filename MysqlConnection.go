@@ -58,7 +58,7 @@ func (e *MysqlConnector) Query(r *Relation) *vector.Vector {
 		os.Exit(1)
 	}
 	ret := new(vector.Vector)
-	if r.kind == INSERT || r.kind==UPDATE {
+	if r.kind != SELECT && r.kind!=COUNT {
 		return ret
 	}
 	//	fmt.Println(res)
@@ -132,6 +132,18 @@ func mysql_query(r *Relation) (sql string) {
 		}
 
 	sql+=" WHERE "+strings.ToLower(r.identifier_field)+" = '"+fmt.Sprint(r.id)+"'"
+	case DELETE:
+	sql="DELETE FROM "+r.table
+		if r.conditions.Len() > 0 {
+			sql += " WHERE ( "
+			for _, ss := range r.conditions {
+				sql += ss
+				if ss != r.conditions.Last() {
+					sql += " ) AND ( "
+				}
+			}
+			sql += " )"
+		}
 	default:
 
 		sql = "Select "
