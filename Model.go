@@ -86,6 +86,7 @@ func (m *Model) AttributesNames() (ret []string) {
 func (m *Model) Last() interface{} {
 	q := NewRelation(m.tablename).Order(strings.ToLower(m.identifier), "desc").First()
 	ret := m.connection.Query(q)
+	if(ret.Len()<1){return nil}
 	v := ret.At(0).(map[string]Value)
 	return m.translateObject(v)
 }
@@ -93,6 +94,7 @@ func (m *Model) Last() interface{} {
 func (m *Model) First() interface{} {
 	q := NewRelation(m.tablename).First()
 	ret := m.connection.Query(q)
+	if(ret.Len()<1){return nil}
 	v := ret.At(0).(map[string]Value)
 	return m.translateObject(v)
 }
@@ -116,6 +118,7 @@ func (m *Model) Refresh(a interface{}) interface{} {
 	id:=fmt.Sprint(m.getId(st.(*reflect.StructValue)))
 	q := NewRelation(m.tablename).Where(m.identifier+" = '"+id+"'").First()
 	ret := m.connection.Query(q)
+	if(ret.Len()<1){return nil}
 	v := ret.At(0).(map[string]Value)
 	return m.translateObject(v)
 }
@@ -159,6 +162,7 @@ func (m *Model) Save(a interface{}) interface{}{
 	//Ugly Hack to get Last Inserted Id
 	q := NewRelation(m.tablename).Order(strings.ToLower(m.identifier), "desc").First()
 	ret := m.connection.Query(q)
+	if(ret.Len()<1){return nil}
 	v := ret.At(0).(map[string]Value)
 	m.translateObjectValue(v,st)
 	return a
@@ -302,6 +306,7 @@ func (r *ModelRelation) Order(x,y string) *ModelRelation {
 func (r *ModelRelation) First() interface{} {
 	q:=r.relation.First()
 	ret := r.model.connection.Query(q)
+	if(ret.Len()<1){return nil}
 	v := ret.At(0).(map[string]Value)
 	return r.model.translateObject(v)
 }
@@ -309,6 +314,7 @@ func (r *ModelRelation) First() interface{} {
 func (r *ModelRelation) Last() interface{} {
 	q:=r.relation.Order(r.model.identifier,"DESC").First()
 	ret := r.model.connection.Query(q)
+	if(ret.Len()<1){return nil}
 	v := ret.At(0).(map[string]Value)
 	return r.model.translateObject(v)
 }
@@ -334,6 +340,7 @@ func (r *ModelRelation) Count(fields ...[]string) int {
 	}
 
 	ret := r.model.connection.Query(q)
+	if(ret.Len()<1){return -1}
 	v := ret.At(0).(map[string]Value)
 	return int(v["_count"].Int())
 }
