@@ -8,6 +8,7 @@ GOFILES=\
 Relation.go\
 Connection.go\
 MysqlConnection.go\
+XMLConnection.go\
 Value.go\
 Model.go\
 
