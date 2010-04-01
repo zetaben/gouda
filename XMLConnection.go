@@ -2,21 +2,22 @@ package gouda
 
 import (
 	"xml"
-	//	"strings"
+	"strconv"
 	"fmt"
 	"os"
 	"bytes"
 	"container/vector"
 )
 
-/** Value **/
-
 type XMLConnector struct {
 	db     *os.File
-	tables map[string]XMLTable
+	tables map[string]*XMLTable
 }
 
-type XMLTable map[string]int //Kind
+type XMLTable struct {
+	schema map[string]int
+	data   *vector.Vector
+}
 
 func (e *XMLConnector) Close() {
 	e.commit()
@@ -49,7 +50,9 @@ func (e *XMLConnector) init() {
 	a, err := parser.Token()
 	schema := false
 	lastType := NullKind
-	var lastTable XMLTable
+	var lastAttr string=""
+	var lastTable *XMLTable
+	var lastItem map[string]Value
 	for ; err == nil; a, err = parser.Token() {
 		switch a.(type) {
 		case xml.StartElement:
@@ -63,14 +66,14 @@ func (e *XMLConnector) init() {
 				switch el {
 				case "table":
 					if attr, found := xml_attribute(xel, "name"); found {
-					//	fmt.Println("Found Table ! " + attr.Value)
+						//	fmt.Println("Found Table ! " + attr.Value)
 						lastTable = e.CreateTableWithoutId(attr.Value)
 					} else {
-					//	fmt.Println(os.Stderr, "Missing required attribute name on <table>")
+						//	fmt.Println(os.Stderr, "Missing required attribute name on <table>")
 					}
 				case "attribute":
 					if attr, found := xml_attribute(xel, "type"); found {
-					//	fmt.Println("Found Attribute ! on" + fmt.Sprint(lastTable) + " " + attr.Value)
+						//	fmt.Println("Found Attribute ! on" + fmt.Sprint(lastTable) + " " + attr.Value)
 						//fmt.Println(xel)
 						lastType = typeFromName(attr.Value)
 					} else {
@@ -78,12 +81,42 @@ func (e *XMLConnector) init() {
 					}
 
 				}
+			} else {
+				switch el {
+				case "tabledata":
+					if attr, found := xml_attribute(xel, "name"); found {
+						lastTable = e.Table(attr.Value)
+					} else {
+						fmt.Println(os.Stderr, "Missing required attribute name on <tabledata>")
+					}
+				case "item":
+					lastItem = make(map[string]Value)
+				
+				case "value":
+					if attr, found := xml_attribute(xel, "name"); found {
+						lastAttr=attr.Value
+					} else {
+						fmt.Println(os.Stderr, "Missing required attribute name on <tabledata>")
+					}
+}
 			}
 		case xml.CharData:
 			if schema && lastType != NullKind {
 				b := bytes.NewBuffer(a.(xml.CharData))
 				lastTable.AddAttribute(b.String(), lastType)
 				lastType = NullKind
+			}else if lastAttr != "" {
+				b := bytes.NewBuffer(a.(xml.CharData))
+				switch lastTable.Attributes()[lastAttr] {
+				case StringKind:
+				lastItem[lastAttr]=SysString(b.String()).Value()
+				case IntKind:
+				i,_:=strconv.Atoi(b.String())
+				lastItem[lastAttr]=SysInt(i).Value()
+
+				}
+				lastAttr = ""
+
 			}
 		case xml.EndElement:
 			el := a.(xml.EndElement).Name.Local
@@ -91,9 +124,22 @@ func (e *XMLConnector) init() {
 			if el == "schema" {
 				schema = false
 			}
+
+			if schema {
+				if el == "table" {
+					lastTable = nil
+				}
+			} else {
+				switch el {
+				case "tabledata":
+					lastTable = nil
+				case "item":
+					lastTable.data.Push(lastItem)
+				}
+			}
 		}
 	}
-	if _,oser:=err.(os.Error); err != nil && !oser  {
+	if _, oser := err.(os.Error); err != nil && !oser {
 		fmt.Printf("%T ", err)
 		fmt.Println(err)
 	}
@@ -106,16 +152,38 @@ func (e *XMLConnector) commit() {
 	fmt.Fprintln(e.db, "<db>")
 	fmt.Fprintln(e.db, "<schema>")
 	for table, tabledesc := range e.tables {
-//		fmt.Println("Comitting table " + table + " struct " + fmt.Sprint(tabledesc))
+		//		fmt.Println("Comitting table " + table + " struct " + fmt.Sprint(tabledesc))
 		fmt.Fprintf(e.db, "<table name=\"%s\">\n", table)
-		for key, typ := range tabledesc {
+		for key, typ := range tabledesc.Attributes() {
 			fmt.Fprintf(e.db, "<attribute type=\"%s\">%s</attribute>\n", typeName(typ), key)
 		}
 		fmt.Fprintln(e.db, "</table>")
 	}
 	fmt.Fprintln(e.db, "</schema>")
-	fmt.Fprint(e.db, "</db>")
+	fmt.Fprintln(e.db, "<data>")
+	for table, tabledesc := range e.tables {
+		fmt.Fprintf(e.db, "<tabledata name=\"%s\">\n", table)
+		for i := 0; i < tabledesc.Data().Len(); i++ {
+			values := tabledesc.Data().At(i).(map[string]Value)
+			fmt.Fprintln(e.db, "<item>")
 
+			for key, typ := range tabledesc.Attributes() {
+				fmt.Fprintf(e.db, "<value name=\"%s\">", key)
+				switch typ {
+				case IntKind:
+					fmt.Fprintf(e.db, "%d", int(values[key].Int()))
+				case StringKind:
+					xml.Escape(e.db, bytes.NewBufferString(string(values[key].String())).Bytes())
+				}
+				fmt.Fprintf(e.db, "</value>\n")
+			}
+
+			fmt.Fprintln(e.db, "</item>")
+		}
+		fmt.Fprintln(e.db, "</tabledata>")
+	}
+	fmt.Fprintln(e.db, "</data>")
+	fmt.Fprint(e.db, "</db>")
 }
 
 //TODO type ValueKind ??
@@ -140,18 +208,21 @@ func typeFromName(kind string) int {
 }
 
 
-func (e *XMLConnector) CreateTableWithoutId(table string) XMLTable {
-	e.tables[table] = make(XMLTable)
-	return e.tables[table]
+func (e *XMLConnector) CreateTableWithoutId(table string) *XMLTable {
+	tmp := new(XMLTable)
+	e.tables[table] = tmp
+	tmp.schema = make(map[string]int)
+	tmp.data = new(vector.Vector)
+	return tmp
 }
 
-func (e *XMLConnector) CreateTable(table string) XMLTable {
+func (e *XMLConnector) CreateTable(table string) *XMLTable {
 	a := e.CreateTableWithoutId(table)
 	a.AddAttribute("id", IntKind)
 	return a
 }
 
-func (e *XMLConnector) Table(table string) XMLTable {
+func (e *XMLConnector) Table(table string) *XMLTable {
 	tab, ok := e.tables[table]
 	if ok {
 		return tab
@@ -160,9 +231,17 @@ func (e *XMLConnector) Table(table string) XMLTable {
 }
 
 func (e *XMLTable) AddAttribute(name string, typ int) {
-	(*e)[name] = typ
+	e.schema[name] = typ
 }
-func (e XMLTable) Attributes() map[string]int { return e }
+func (e *XMLTable) Attributes() map[string]int {
+	return e.schema
+}
+func (e *XMLTable) Data() *vector.Vector { return e.data }
+
+//unprotected
+func (e *XMLTable) Insert(val map[string]Value) {
+	e.data.Push(val)
+}
 
 func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 	return new(vector.Vector)
@@ -170,7 +249,7 @@ func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 
 func OpenXML(conStr string) Connection {
 	db := (new(XMLConnector))
-	db.tables = make(map[string]XMLTable)
+	db.tables = make(map[string]*XMLTable)
 	db.Open(conStr)
 	return db
 }
