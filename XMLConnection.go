@@ -145,6 +145,7 @@ func (e *XMLConnector) init() {
 	}
 }
 
+func (e *XMLConnector) Commit() { e.commit() }
 func (e *XMLConnector) commit() {
 	e.db.Seek(0, 0)
 	e.db.Truncate(0)
@@ -243,8 +244,24 @@ func (e *XMLTable) Insert(val map[string]Value) {
 	e.data.Push(val)
 }
 
+func min(a,b int) int {if (a > b ) { return b}; return a  }
+
 func (e *XMLConnector) Query(r *Relation) *vector.Vector {
-	return new(vector.Vector)
+	ret := new(vector.Vector)
+
+
+	fmt.Println(r)
+	switch r.kind {
+	case SELECT:
+	dat := e.tables[r.table].data
+	limit:=0
+	if(r.limit_count > 0 ){ limit=r.limit_offset+r.limit_count }
+	limit=min(limit,dat.Len())
+	for i:=r.limit_offset; i < limit ; i++ {
+	ret.Push(dat.At(i))
+	}
+	}
+	return ret
 }
 
 func OpenXML(conStr string) Connection {
