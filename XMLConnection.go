@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"os"
 	"bytes"
+	"sort"
+	"math"
+	"strings"
 	"container/vector"
 )
 
@@ -14,9 +17,50 @@ type XMLConnector struct {
 	tables map[string]*XMLTable
 }
 
+type ValueVector struct {
+	sort      vector.StringVector
+	order_asc vector.StringVector
+	vector.Vector
+}
+
+func (v *ValueVector) Less(i, j int) bool {
+	ii := v.At(i).(map[string]Value)
+	jj := v.At(j).(map[string]Value)
+	for i:=0;  i< v.sort.Len() ; i++ {
+		sort:=strings.ToLower(v.sort.At(i))
+		order_asc:=strings.ToUpper(v.order_asc.At(i))=="ASC"
+
+		switch ii[sort].Kind() {
+		case IntKind:
+			if ii[sort].Int() == jj[sort].Int() {continue}
+		case StringKind:
+			if ii[sort].String() == jj[sort].String() {continue}
+		}
+
+
+	if order_asc {
+		switch ii[sort].Kind() {
+		case IntKind:
+			return ii[sort].Int() < jj[sort].Int()
+		case StringKind:
+			return ii[sort].String() < jj[sort].String()
+		}
+	} else {
+		switch ii[sort].Kind() {
+		case IntKind:
+			return ii[sort].Int() > jj[sort].Int()
+		case StringKind:
+			return ii[sort].String() > jj[sort].String()
+		}
+
+	}
+	}
+	return false
+}
+
 type XMLTable struct {
 	schema map[string]int
-	data   *vector.Vector
+	data   *ValueVector
 }
 
 func (e *XMLConnector) Close() {
@@ -50,7 +94,7 @@ func (e *XMLConnector) init() {
 	a, err := parser.Token()
 	schema := false
 	lastType := NullKind
-	var lastAttr string=""
+	var lastAttr string = ""
 	var lastTable *XMLTable
 	var lastItem map[string]Value
 	for ; err == nil; a, err = parser.Token() {
@@ -91,28 +135,28 @@ func (e *XMLConnector) init() {
 					}
 				case "item":
 					lastItem = make(map[string]Value)
-				
+
 				case "value":
 					if attr, found := xml_attribute(xel, "name"); found {
-						lastAttr=attr.Value
+						lastAttr = attr.Value
 					} else {
 						fmt.Println(os.Stderr, "Missing required attribute name on <tabledata>")
 					}
-}
+				}
 			}
 		case xml.CharData:
 			if schema && lastType != NullKind {
 				b := bytes.NewBuffer(a.(xml.CharData))
 				lastTable.AddAttribute(b.String(), lastType)
 				lastType = NullKind
-			}else if lastAttr != "" {
+			} else if lastAttr != "" {
 				b := bytes.NewBuffer(a.(xml.CharData))
 				switch lastTable.Attributes()[lastAttr] {
 				case StringKind:
-				lastItem[lastAttr]=SysString(b.String()).Value()
+					lastItem[lastAttr] = SysString(b.String()).Value()
 				case IntKind:
-				i,_:=strconv.Atoi(b.String())
-				lastItem[lastAttr]=SysInt(i).Value()
+					i, _ := strconv.Atoi(b.String())
+					lastItem[lastAttr] = SysInt(i).Value()
 
 				}
 				lastAttr = ""
@@ -213,7 +257,7 @@ func (e *XMLConnector) CreateTableWithoutId(table string) *XMLTable {
 	tmp := new(XMLTable)
 	e.tables[table] = tmp
 	tmp.schema = make(map[string]int)
-	tmp.data = new(vector.Vector)
+	tmp.data = new(ValueVector)
 	return tmp
 }
 
@@ -237,29 +281,53 @@ func (e *XMLTable) AddAttribute(name string, typ int) {
 func (e *XMLTable) Attributes() map[string]int {
 	return e.schema
 }
-func (e *XMLTable) Data() *vector.Vector { return e.data }
+func (e *XMLTable) Data() *ValueVector { return e.data }
 
 //unprotected
 func (e *XMLTable) Insert(val map[string]Value) {
 	e.data.Push(val)
 }
 
-func min(a,b int) int {if (a > b ) { return b}; return a  }
+func min(a, b int) int {
+	if a > b {
+		return b
+	}
+	return a
+}
+
+func copyVect(v *ValueVector) *ValueVector {
+	ret := new(ValueVector)
+
+	for i := 0; i < v.Len(); i++ {
+		ret.Push(v.At(i))
+	}
+	return ret
+}
 
 func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 	ret := new(vector.Vector)
 
-
-	fmt.Println(r)
+//	fmt.Println(r)
 	switch r.kind {
 	case SELECT:
-	dat := e.tables[r.table].data
-	limit:=0
-	if(r.limit_count > 0 ){ limit=r.limit_offset+r.limit_count }
-	limit=min(limit,dat.Len())
-	for i:=r.limit_offset; i < limit ; i++ {
-	ret.Push(dat.At(i))
-	}
+		dat := copyVect(e.tables[r.table].data)
+		limit := math.MaxInt32
+		if r.order_field.Len() > 0 {
+			dat.sort = r.order_field
+			dat.order_asc = r.order_direction
+			sort.Sort(dat)
+//			fmt.Println(dat)
+		}
+
+		if r.limit_count > 0 {
+			limit = r.limit_offset + r.limit_count
+		}
+		limit = min(limit, dat.Len())
+//		fmt.Println(r.limit_offset)
+//		fmt.Println(limit)
+		for i := r.limit_offset; i < limit; i++ {
+			ret.Push(dat.At(i))
+		}
 	}
 	return ret
 }
