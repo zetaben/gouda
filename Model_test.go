@@ -191,8 +191,8 @@ func TestModelRelationRefresh(t *testing.T) {
 
 func need_connection() {
 	if !conn_ok {
-		//init_mysql()
-		init_xml()
+		init_mysql()
+		//init_xml()
 		conn_ok = true
 	}
 

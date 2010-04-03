@@ -22,7 +22,26 @@ func mysql_string(v Value) string {
 }
 
 func (c *Condition) mysql_string() string{
-return "NULLCOND"
+
+ret:=" "+c.field+" "
+
+switch c.operand {
+
+case EQUAL:
+	ret+=" = '"+mysql_string(c.value)+"' "
+
+case ISNULL:
+	ret+=" IS NULL "
+case ISNOTNULL:
+	ret+=" IS NOT NULL "
+
+default:
+	ret+="UNKWON OPERAND "+c.String()
+
+}
+
+
+return ret
 }
 
 
