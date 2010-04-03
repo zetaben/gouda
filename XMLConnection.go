@@ -323,9 +323,13 @@ func (e *XMLConnector) match(conds vector.Vector, row map[string]Value) bool {
 				return false
 			}
 		case ISNOTNULL:
-			if isnull(row[cond.field]) {return false}
+			if isnull(row[cond.field]) {
+				return false
+			}
 		case ISNULL:
-			if !isnull(row[cond.field]) {return false}
+			if !isnull(row[cond.field]) {
+				return false
+			}
 
 		default:
 			fmt.Fprintln(os.Stderr, "Unknown cond "+fmt.Sprint(cond))
@@ -335,14 +339,14 @@ func (e *XMLConnector) match(conds vector.Vector, row map[string]Value) bool {
 	return true
 }
 
-func isnull( v Value) bool{
-switch v.Kind() {
-case IntKind :
-	return int(v.Int())==0
-case StringKind :
-	return string(v.String())==""
-}
-return false
+func isnull(v Value) bool {
+	switch v.Kind() {
+	case IntKind:
+		return int(v.Int()) == 0
+	case StringKind:
+		return string(v.String()) == ""
+	}
+	return false
 }
 
 
@@ -366,24 +370,26 @@ func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 		}
 		//		fmt.Println(r.limit_offset)
 		//		fmt.Println(limit)
-		found:=0
+		found := 0
 		for i := 0; i < dat.Len(); i++ {
 			tmp := dat.At(i).(map[string]Value)
 			if e.match(r.conditions, tmp) {
-				if found >= r.limit_offset  {
-				ret.Push(tmp)
+				if found >= r.limit_offset {
+					ret.Push(tmp)
 				}
 				found++
-				if found == limit { return ret }
+				if found == limit {
+					return ret
+				}
 			}
 		}
 	case COUNT:
-		 for  i:=range r.attributes {
-			k:=r.attributes.At(i)
+		for i := range r.attributes {
+			k := r.attributes.At(i)
 			r.Where(F(k).IsNotNull())
-		 }
+		}
 		dat := e.tables[r.table].data
-		count:=0
+		count := 0
 		for i := 0; i < dat.Len(); i++ {
 			tmp := dat.At(i).(map[string]Value)
 			if e.match(r.conditions, tmp) {
@@ -409,19 +415,21 @@ func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 		if r.limit_count > 0 {
 			limit = r.limit_offset + r.limit_count
 		}
-		found:=0
+		found := 0
 		for i := 0; i < dat.Len(); i++ {
 			tmp := dat.At(i).(map[string]Value)
 			if e.match(r.conditions, tmp) {
-				if found >= r.limit_offset  {
-				list.Push(i)
+				if found >= r.limit_offset {
+					list.Push(i)
 				}
 				found++
-				if found == limit { return ret }
+				if found == limit {
+					return ret
+				}
 			}
 		}
-		for i:=range list {
-		e.tables[r.table].data.Delete(list.At(i))
+		for i := range list {
+			e.tables[r.table].data.Delete(list.At(i))
 		}
 
 	case UPDATE:
@@ -430,17 +438,19 @@ func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 		if r.limit_count > 0 {
 			limit = r.limit_offset + r.limit_count
 		}
-		found:=0
+		found := 0
 		for i := 0; i < dat.Len(); i++ {
 			tmp := dat.At(i).(map[string]Value)
 			if e.match(r.conditions, tmp) {
-				if found >= r.limit_offset  {
-				for k,v:=range r.values {
-				tmp[strings.ToLower(k)]=v
-				}
+				if found >= r.limit_offset {
+					for k, v := range r.values {
+						tmp[strings.ToLower(k)] = v
+					}
 				}
 				found++
-				if found == limit { return ret }
+				if found == limit {
+					return ret
+				}
 			}
 		}
 	}

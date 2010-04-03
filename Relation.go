@@ -11,63 +11,64 @@ type RequestKind int
 type OperandKind int
 
 type Condition struct {
-	field string
+	field   string
 	operand OperandKind
-	value Value
-	or vector.Vector
+	value   Value
+	or      vector.Vector
 }
+
 const (
-NULL OperandKind = iota
-EQUAL
-ISNOTNULL
-ISNULL
+	NULL OperandKind = iota
+	EQUAL
+	ISNOTNULL
+	ISNULL
 )
 const (
-SELECT RequestKind = iota
-UPDATE
-INSERT
-COUNT
-DELETE
+	SELECT RequestKind = iota
+	UPDATE
+	INSERT
+	COUNT
+	DELETE
 )
 
 type Relation struct {
-	conditions vector.Vector
-	table      string
-	limit_offset int
-	limit_count int
-	order_field vector.StringVector
-	order_direction vector.StringVector
-	kind	RequestKind
-	attributes vector.StringVector
-	values map[string]Value
-	id int
+	conditions       vector.Vector
+	table            string
+	limit_offset     int
+	limit_count      int
+	order_field      vector.StringVector
+	order_direction  vector.StringVector
+	kind             RequestKind
+	attributes       vector.StringVector
+	values           map[string]Value
+	id               int
 	identifier_field string
 }
 
 func (r *Relation) Count(fields []string) *Relation {
-	for _,s:=range fields {
-	r.attributes.Push(s)
+	for _, s := range fields {
+		r.attributes.Push(s)
 	}
-	r.kind=COUNT
+	r.kind = COUNT
 	return r
 }
 
 func (r *Relation) Delete() *Relation {
-	r.kind=DELETE
+	r.kind = DELETE
 	return r
 }
 
 func (r *Relation) Insert(mp map[string]Value) *Relation {
-	r.kind=INSERT
-	r.values=mp
+	r.kind = INSERT
+	r.values = mp
 	return r
 }
 
-func (r *Relation) Update(mp map[string]Value,identifier string,id int) *Relation {
-	r.kind=UPDATE
-	r.values=mp
-	r.id=id
-	r.identifier_field=identifier
+func (r *Relation) Update(mp map[string]Value, identifier string, id int) *Relation {
+	r.kind = UPDATE
+	r.values = mp
+	r.id = id
+	r.identifier_field = identifier
 	return r
 }
 
@@ -84,18 +85,18 @@ func (r *Relation) Table(t string) *Relation {
 	return r
 }
 
-func (r * Relation ) Limit(offset, count int) *Relation {
-	r.limit_offset=offset
-	r.limit_count=count
+func (r *Relation) Limit(offset, count int) *Relation {
+	r.limit_offset = offset
+	r.limit_count = count
 	return r
 }
 
-func (r * Relation) First()  *Relation {
-	r.Limit(0,1)
+func (r *Relation) First() *Relation {
+	r.Limit(0, 1)
 	return r
 }
 
-func (r *Relation) Order(field, direction string ) *Relation {
+func (r *Relation) Order(field, direction string) *Relation {
 	r.order_field.Push(field)
 	r.order_direction.Push(direction)
 	return r
@@ -125,8 +126,8 @@ func (r *Relation) String() string {
 		s += ") \n"
 	}
 	if r.limit_count > 0 {
-		s += "Offset : "+fmt.Sprint(r.limit_offset)+"\n"
-		s += "Count : "+fmt.Sprint(r.limit_count)+"\n"
+		s += "Offset : " + fmt.Sprint(r.limit_offset) + "\n"
+		s += "Count : " + fmt.Sprint(r.limit_count) + "\n"
 	}
 	return "Une relation" + s
 }
@@ -135,14 +136,14 @@ func From(t interface{}) (r *Relation) { return NewRelation(t) }
 
 func NewRelation(t interface{}) (r *Relation) {
 	r = new(Relation)
-	r.kind=SELECT
-	switch  typ := t.(type) {
+	r.kind = SELECT
+	switch typ := t.(type) {
 	case string:
-	r.Table(t.(string));
+		r.Table(t.(string))
 	default:
-	tab := strings.Split(reflect.Typeof(t).String(), ".", 0)
-	tablename := strings.ToLower(tab[len(tab)-1])
-	r.Table(tablename)
+		tab := strings.Split(reflect.Typeof(t).String(), ".", 0)
+		tablename := strings.ToLower(tab[len(tab)-1])
+		r.Table(tablename)
 	}
 	return
 }
@@ -151,50 +152,49 @@ func NewRelation(t interface{}) (r *Relation) {
 /** Condition **/
 
 func F(field string) (c *Condition) {
-c=new(Condition)
-c.operand=NULL
-c.field=strings.ToLower(field)
-return
+	c = new(Condition)
+	c.operand = NULL
+	c.field = strings.ToLower(field)
+	return
 }
 
 func (c *Condition) Eq(v interface{}) *Condition {
-c.operand=EQUAL
-switch v.(type) {
-case int:
-c.value=SysInt(v.(int)).Value()
-case string:
-c.value=SysString(v.(string)).Value()
-}
-return c
+	c.operand = EQUAL
+	switch v.(type) {
+	case int:
+		c.value = SysInt(v.(int)).Value()
+	case string:
+		c.value = SysString(v.(string)).Value()
+	}
+	return c
 }
 
 func (c *Condition) IsNotNull() *Condition {
-c.operand=ISNOTNULL
-return c
+	c.operand = ISNOTNULL
+	return c
 }
 
 func (c *Condition) IsNull() *Condition {
-c.operand=ISNULL
-return c
+	c.operand = ISNULL
+	return c
 }
 func (c *Condition) String() string {
-ret:=c.field
-switch c.operand {
-case EQUAL:
-ret+=" = "
-case ISNOTNULL:
-ret+=" IS NOT NULL "
-case ISNULL:
-ret+=" IS NULL "
+	ret := c.field
+	switch c.operand {
+	case EQUAL:
+		ret += " = "
+	case ISNOTNULL:
+		ret += " IS NOT NULL "
+	case ISNULL:
+		ret += " IS NULL "
+	}
+	if c.operand != ISNOTNULL && c.operand != ISNULL {
+		switch c.value.Kind() {
+		case IntKind:
+			ret += fmt.Sprint(int(c.value.Int()))
+		case StringKind:
+			ret += fmt.Sprint(string(c.value.String()))
+		}
+	}
+	return ret
 }
-if c.operand != ISNOTNULL && c.operand != ISNULL {
-switch c.value.Kind() {
-case IntKind:
-ret+=fmt.Sprint(int(c.value.Int()))
-case StringKind:
-ret+=fmt.Sprint(string(c.value.String()))
-}
-}
-return ret
-}
-

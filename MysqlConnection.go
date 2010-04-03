@@ -21,27 +21,26 @@ func mysql_string(v Value) string {
 	return "UNRECHEABLE"
 }
 
-func (c *Condition) mysql_string() string{
+func (c *Condition) mysql_string() string {
 
-ret:=" "+c.field+" "
+	ret := " " + c.field + " "
 
-switch c.operand {
+	switch c.operand {
 
-case EQUAL:
-	ret+=" = '"+mysql_string(c.value)+"' "
+	case EQUAL:
+		ret += " = '" + mysql_string(c.value) + "' "
 
-case ISNULL:
-	ret+=" IS NULL "
-case ISNOTNULL:
-	ret+=" IS NOT NULL "
+	case ISNULL:
+		ret += " IS NULL "
+	case ISNOTNULL:
+		ret += " IS NOT NULL "
 
-default:
-	ret+="UNKWON OPERAND "+c.String()
+	default:
+		ret += "UNKWON OPERAND " + c.String()
 
-}
+	}
 
-
-return ret
+	return ret
 }
 
 
@@ -74,14 +73,14 @@ func (e *MysqlConnector) Open(connectionString string) bool {
 
 
 func (e *MysqlConnector) Query(r *Relation) *vector.Vector {
-	query:=mysql_query(r)
+	query := mysql_query(r)
 	res, err := e.conn.Query(query)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 		os.Exit(1)
 	}
 	ret := new(vector.Vector)
-	if r.kind != SELECT && r.kind!=COUNT {
+	if r.kind != SELECT && r.kind != COUNT {
 		return ret
 	}
 	//	fmt.Println(res)
@@ -141,22 +140,22 @@ func mysql_query(r *Relation) (sql string) {
 
 	case UPDATE:
 
-	sql="UPDATE "+r.table+" "
-	sql+="SET "
-		i:=0
+		sql = "UPDATE " + r.table + " "
+		sql += "SET "
+		i := 0
 		for k, v := range r.values {
 			i++
 			sql += strings.ToLower(k)
-			sql+=" = "
+			sql += " = "
 			sql += "'" + mysql_string(v) + "'"
 			if i < len(r.values) {
 				sql += ", "
 			}
 		}
 
-	sql+=" WHERE "+strings.ToLower(r.identifier_field)+" = '"+fmt.Sprint(r.id)+"'"
+		sql += " WHERE " + strings.ToLower(r.identifier_field) + " = '" + fmt.Sprint(r.id) + "'"
 	case DELETE:
-	sql="DELETE FROM "+r.table
+		sql = "DELETE FROM " + r.table
 		if r.conditions.Len() > 0 {
 			sql += " WHERE ( "
 			for _, ss := range r.conditions {
@@ -206,6 +205,6 @@ func mysql_query(r *Relation) (sql string) {
 		}
 	}
 	sql += ";"
-//	fmt.Println(sql)
+	//	fmt.Println(sql)
 	return
 }
