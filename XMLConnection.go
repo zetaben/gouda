@@ -328,6 +328,22 @@ func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 		for i := r.limit_offset; i < limit; i++ {
 			ret.Push(dat.At(i))
 		}
+	case COUNT:
+		dat := e.tables[r.table].data
+		limit := math.MaxInt32
+		if r.limit_count > 0 {
+			limit = r.limit_offset + r.limit_count
+		}
+		limit = min(limit, dat.Len())
+		count := 0
+		for i := r.limit_offset; i < limit; i++ {
+		count++
+		}
+		re:=make(map[string]Value)
+		re["_count"]=SysInt(count).Value()
+		ret.Push(re)
+	case DELETE:
+		fmt.Println(r)
 	}
 	return ret
 }
