@@ -99,7 +99,7 @@ func TestModelFetch(t *testing.T) {
 
 	tab := gouda.M(p).All()
 	if len(tab) != 2 {
-		t.Error("Wrong Fetched Size")
+		t.Error("Wrong Fetched Size ("+fmt.Sprint(len(tab))+")")
 	}
 }
 
@@ -119,7 +119,7 @@ func TestModelRelationFetch(t *testing.T) {
 	totos:=Personnes.Where("nom = 'toto'").All()
 
 	if len(totos) != 1 {
-		t.Error("Wrong Fetched Size, fetched :"+fmt.Sprint(len(totos)))
+		t.Fatal("Wrong Fetched Size, fetched :"+fmt.Sprint(len(totos)))
 	}
 	toto=totos[0].(Personne)
 	if toto.Nom != "toto" || toto.Id != 1 {
@@ -191,7 +191,8 @@ func TestModelRelationRefresh(t *testing.T) {
 
 func need_connection() {
 	if !conn_ok {
-		init_mysql()
+		//init_mysql()
+		init_xml()
 		conn_ok = true
 	}
 
@@ -255,6 +256,19 @@ func init_mysql() {
 	gouda.GetConnectionStore().RegisterConnection(&conn)
 }
 
+func init_xml() {
+conStr:="personnes.xml"
+	conn := gouda.OpenXML(conStr).(*gouda.XMLConnector)
+	table := conn.CreateTable("personne")
+	table.AddAttribute("nom",gouda.StringKind)
+	table.AddAttribute("age",gouda.IntKind)
+	table.Insert(map[string]gouda.Value{"id":gouda.SysInt(1).Value(),"nom":gouda.SysString("toto").Value(),"age":gouda.SysInt(13).Value()})
+	table.Insert(map[string]gouda.Value{"id":gouda.SysInt(2).Value(),"nom":gouda.SysString("titi").Value(),"age":gouda.SysInt(0).Value()})
+	conn.Close()
+	conn2 := gouda.OpenXML(conStr)
+	gouda.GetConnectionStore().RegisterConnection(&conn2)
+
+}
 
 func compare(a, b map[string]reflect.Type) bool {
 

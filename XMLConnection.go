@@ -350,7 +350,6 @@ func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 		}
 		e.tables[r.table].data.Push(ins)
 	case DELETE:
-		fmt.Println(r)
 	}
 	return ret
 }
