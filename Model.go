@@ -2,7 +2,7 @@ package gouda
 
 import (
 	"reflect"
-	"fmt"
+//	"fmt"
 	"strings"
 )
 /** Types **/
@@ -115,8 +115,8 @@ func (m *Model) Refresh(a interface{}) interface{} {
 		st=p.Elem()
 	}
 
-	id:=fmt.Sprint(m.getId(st.(*reflect.StructValue)))
-	q := NewRelation(m.tablename).Where(m.identifier+" = '"+id+"'").First()
+	id:=m.getId(st.(*reflect.StructValue))
+	q := NewRelation(m.tablename).Where(F(m.identifier).Eq(id)).First()
 	ret := m.connection.Query(q)
 	if(ret.Len()<1){return nil}
 	v := ret.At(0).(map[string]Value)
@@ -132,8 +132,8 @@ func (m *Model) Delete(a interface{}) interface{}{
 	if p,ok:=st.(*reflect.PtrValue);ok {
 		st=p.Elem()
 	}
-	id:=fmt.Sprint(m.getId(st.(*reflect.StructValue)))
-	q := NewRelation(m.tablename).Where(m.identifier+" = '"+id+"'").Delete()
+	id:=m.getId(st.(*reflect.StructValue))
+	q := NewRelation(m.tablename).Where(F(m.identifier).Eq(id)).Delete()
 	m.connection.Query(q)
 	return a
 }
@@ -279,7 +279,7 @@ func (m *Model) newRelation() *ModelRelation{
 	return mr
 }
 
-func (m *Model) Where(x string) *ModelRelation{
+func (m *Model) Where(x *Condition) *ModelRelation{
 	return m.newRelation().Where(x)
 }
 
@@ -293,7 +293,7 @@ func (m *Model) Count(fields ...[]string) int{
 
 /** ModelRelation **/
 
-func (r *ModelRelation) Where(x string) *ModelRelation {
+func (r *ModelRelation) Where(x *Condition) *ModelRelation {
 	r.relation.Where(x)
 	return r
 }

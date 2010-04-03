@@ -107,16 +107,16 @@ func TestModelRelationFetch(t *testing.T) {
 	var p Personne;
 	need_connection();
 	Personnes:=gouda.M(p)
-	toto:=Personnes.Where("nom = 'toto'").First().(Personne)
+	toto:=Personnes.Where(gouda.F("nom").Eq("toto")).First().(Personne)
 	if toto.Nom != "toto" || toto.Id != 1 {
 		t.Error("Not Found toto")
 	}
-	toto=Personnes.Where("nom = 'toto'").Last().(Personne)
+	toto=Personnes.Where(gouda.F("nom").Eq("toto")).Last().(Personne)
 	if toto.Nom != "toto" || toto.Id != 1 {
 		t.Error("Not Found toto")
 	}
 
-	totos:=Personnes.Where("nom = 'toto'").All()
+	totos:=Personnes.Where(gouda.F("nom").Eq("toto")).All()
 
 	if len(totos) != 1 {
 		t.Fatal("Wrong Fetched Size, fetched :"+fmt.Sprint(len(totos)))
@@ -158,7 +158,7 @@ func TestModelRelationFetchCount(t *testing.T) {
 	}
 
 
-	if Personnes.Where("nom = 'toto' ").Count()!=1	{
+	if Personnes.Where(gouda.F("nom").Eq("toto")).Count()!=1	{
 		t.Error("Counting toto failed, counted : "+fmt.Sprint(Personnes.Count()))
 	}
 

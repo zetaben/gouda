@@ -21,6 +21,10 @@ func mysql_string(v Value) string {
 	return "UNRECHEABLE"
 }
 
+func (c *Condition) mysql_string() string{
+return "NULLCOND"
+}
+
 
 type MysqlConnector struct {
 	conn *mysql.MySQLInstance
@@ -137,7 +141,7 @@ func mysql_query(r *Relation) (sql string) {
 		if r.conditions.Len() > 0 {
 			sql += " WHERE ( "
 			for _, ss := range r.conditions {
-				sql += ss
+				sql += ss.(*Condition).mysql_string()
 				if ss != r.conditions.Last() {
 					sql += " ) AND ( "
 				}
@@ -164,7 +168,7 @@ func mysql_query(r *Relation) (sql string) {
 		if r.conditions.Len() > 0 {
 			sql += " where ( "
 			for _, ss := range r.conditions {
-				sql += ss
+				sql += ss.(*Condition).mysql_string()
 				if ss != r.conditions.Last() {
 					sql += " ) AND ( "
 				}

@@ -26,32 +26,36 @@ type ValueVector struct {
 func (v *ValueVector) Less(i, j int) bool {
 	ii := v.At(i).(map[string]Value)
 	jj := v.At(j).(map[string]Value)
-	for i:=0;  i< v.sort.Len() ; i++ {
-		sort:=strings.ToLower(v.sort.At(i))
-		order_asc:=strings.ToUpper(v.order_asc.At(i))=="ASC"
+	for i := 0; i < v.sort.Len(); i++ {
+		sort := strings.ToLower(v.sort.At(i))
+		order_asc := strings.ToUpper(v.order_asc.At(i)) == "ASC"
 		switch ii[sort].Kind() {
 		case IntKind:
-			if ii[sort].Int() == jj[sort].Int() {continue}
+			if ii[sort].Int() == jj[sort].Int() {
+				continue
+			}
 		case StringKind:
-			if ii[sort].String() == jj[sort].String() {continue}
+			if ii[sort].String() == jj[sort].String() {
+				continue
+			}
 		}
 
-	if order_asc {
-		switch ii[sort].Kind() {
-		case IntKind:
-			return ii[sort].Int() < jj[sort].Int()
-		case StringKind:
-			return ii[sort].String() < jj[sort].String()
-		}
-	} else {
-		switch ii[sort].Kind() {
-		case IntKind:
-			return ii[sort].Int() > jj[sort].Int()
-		case StringKind:
-			return ii[sort].String() > jj[sort].String()
-		}
+		if order_asc {
+			switch ii[sort].Kind() {
+			case IntKind:
+				return ii[sort].Int() < jj[sort].Int()
+			case StringKind:
+				return ii[sort].String() < jj[sort].String()
+			}
+		} else {
+			switch ii[sort].Kind() {
+			case IntKind:
+				return ii[sort].Int() > jj[sort].Int()
+			case StringKind:
+				return ii[sort].String() > jj[sort].String()
+			}
 
-	}
+		}
 	}
 	return false
 }
@@ -302,54 +306,124 @@ func copyVect(v *ValueVector) *ValueVector {
 	return ret
 }
 
+func (e *XMLConnector) match(conds vector.Vector, row map[string]Value) bool {
+
+	if conds.Len() == 0 {
+		return true
+	} //fast out
+
+	for i := range conds {
+		cond := conds.At(i).(*Condition)
+
+		switch cond.operand {
+		case NULL:
+			return false
+		case EQUAL:
+			if !Equal(row[cond.field], cond.value) {
+				return false
+			}
+
+		default:
+			fmt.Fprintln(os.Stderr, "Unknown cond"+fmt.Sprint(cond))
+			return false
+		}
+	}
+	return true
+}
+
 func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 	ret := new(vector.Vector)
 
-//	fmt.Println(r)
+	//	fmt.Println(r)
 	switch r.kind {
 	case SELECT:
 		dat := copyVect(e.tables[r.table].data)
-		limit := math.MaxInt32
 		if r.order_field.Len() > 0 {
 			dat.sort = r.order_field
 			dat.order_asc = r.order_direction
 			sort.Sort(dat)
-//			fmt.Println(dat)
+			//			fmt.Println(dat)
 		}
 
+		limit := math.MaxInt32
 		if r.limit_count > 0 {
 			limit = r.limit_offset + r.limit_count
 		}
-		limit = min(limit, dat.Len())
-//		fmt.Println(r.limit_offset)
-//		fmt.Println(limit)
-		for i := r.limit_offset; i < limit; i++ {
-			ret.Push(dat.At(i))
+		//		fmt.Println(r.limit_offset)
+		//		fmt.Println(limit)
+		found:=0
+		for i := 0; i < dat.Len(); i++ {
+			tmp := dat.At(i).(map[string]Value)
+			if e.match(r.conditions, tmp) {
+				if found >= r.limit_offset  {
+				ret.Push(tmp)
+				}
+				found++
+				if found == limit { return ret }
+			}
 		}
 	case COUNT:
+		dat := e.tables[r.table].data
+		count:=0
+		for i := 0; i < dat.Len(); i++ {
+			tmp := dat.At(i).(map[string]Value)
+			if e.match(r.conditions, tmp) {
+				count++
+			}
+		}
+		re := make(map[string]Value)
+		re["_count"] = SysInt(count).Value()
+		ret.Push(re)
+	case INSERT:
+		ins := make(map[string]Value)
+		for k, v := range r.values {
+			ins[strings.ToLower(k)] = v
+		}
+		if _, ok := ins["id"]; ok {
+			ins["id"] = SysInt(e.tables[r.table].data.Len() + 1).Value()
+		}
+		e.tables[r.table].data.Push(ins)
+	case DELETE:
+		var list vector.IntVector
 		dat := e.tables[r.table].data
 		limit := math.MaxInt32
 		if r.limit_count > 0 {
 			limit = r.limit_offset + r.limit_count
 		}
-		limit = min(limit, dat.Len())
-		count := 0
-		for i := r.limit_offset; i < limit; i++ {
-		count++
+		found:=0
+		for i := 0; i < dat.Len(); i++ {
+			tmp := dat.At(i).(map[string]Value)
+			if e.match(r.conditions, tmp) {
+				if found >= r.limit_offset  {
+				list.Push(i)
+				}
+				found++
+				if found == limit { return ret }
+			}
 		}
-		re:=make(map[string]Value)
-		re["_count"]=SysInt(count).Value()
-		ret.Push(re)
-	case INSERT:
-		ins:=make(map[string]Value)
-		for k,v :=range r.values {
-			ins[strings.ToLower(k)]=v
+		for i:=range list {
+		e.tables[r.table].data.Delete(list.At(i))
 		}
-		if _,ok := ins["id"]; ok {
-			ins["id"]=SysInt(e.tables[r.table].data.Len()+1).Value()
+
+	case UPDATE:
+		dat := e.tables[r.table].data
+		limit := math.MaxInt32
+		if r.limit_count > 0 {
+			limit = r.limit_offset + r.limit_count
 		}
-		e.tables[r.table].data.Push(ins)
-	case DELETE:
+		found:=0
+		for i := 0; i < dat.Len(); i++ {
+			tmp := dat.At(i).(map[string]Value)
+			if e.match(r.conditions, tmp) {
+				if found >= r.limit_offset  {
+				for k,v:=range r.values {
+				tmp[strings.ToLower(k)]=v
+				}
+				}
+				found++
+				if found == limit { return ret }
+			}
+		}
 	}
 	return ret
 }

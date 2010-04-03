@@ -8,6 +8,18 @@ import (
 )
 
 type RequestKind int
+type OperandKind int
+
+type Condition struct {
+	field string
+	operand OperandKind
+	value Value
+	or vector.Vector
+}
+const (
+NULL OperandKind = iota
+EQUAL
+)
 const (
 SELECT RequestKind = iota
 UPDATE
@@ -17,7 +29,7 @@ DELETE
 )
 
 type Relation struct {
-	conditions vector.StringVector
+	conditions vector.Vector
 	table      string
 	limit_offset int
 	limit_count int
@@ -57,7 +69,7 @@ func (r *Relation) Update(mp map[string]Value,identifier string,id int) *Relatio
 	return r
 }
 
-func (r *Relation) Where(s string) *Relation {
+func (r *Relation) Where(s *Condition) *Relation {
 
 	r.conditions.Push(s)
 
@@ -92,7 +104,7 @@ func (r *Relation) String() string {
 	s := " Conditions : \n\t ("
 
 	for _, ss := range r.conditions {
-		s += ss
+		s += ss.(*Condition).String()
 		if ss != r.conditions.Last() {
 			s += ", "
 		}
@@ -132,3 +144,43 @@ func NewRelation(t interface{}) (r *Relation) {
 	}
 	return
 }
+
+
+/** Condition **/
+
+func F(field string) (c *Condition) {
+c=new(Condition)
+c.operand=NULL
+c.field=strings.ToLower(field)
+return
+}
+
+func (c *Condition) Eq(v interface{}) *Condition {
+c.operand=EQUAL
+switch v.(type) {
+case int:
+c.value=SysInt(v.(int)).Value()
+case string:
+c.value=SysString(v.(string)).Value()
+}
+return c
+}
+
+
+func (c *Condition) String() string {
+ret:=c.field
+switch c.operand {
+case EQUAL:
+ret+=" = "
+}
+
+switch c.value.Kind() {
+case IntKind:
+ret+=fmt.Sprint(int(c.value.Int()))
+case StringKind:
+ret+=fmt.Sprint(string(c.value.String()))
+}
+
+return ret
+}
+
