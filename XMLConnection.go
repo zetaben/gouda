@@ -29,14 +29,12 @@ func (v *ValueVector) Less(i, j int) bool {
 	for i:=0;  i< v.sort.Len() ; i++ {
 		sort:=strings.ToLower(v.sort.At(i))
 		order_asc:=strings.ToUpper(v.order_asc.At(i))=="ASC"
-
 		switch ii[sort].Kind() {
 		case IntKind:
 			if ii[sort].Int() == jj[sort].Int() {continue}
 		case StringKind:
 			if ii[sort].String() == jj[sort].String() {continue}
 		}
-
 
 	if order_asc {
 		switch ii[sort].Kind() {
@@ -342,6 +340,15 @@ func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 		re:=make(map[string]Value)
 		re["_count"]=SysInt(count).Value()
 		ret.Push(re)
+	case INSERT:
+		ins:=make(map[string]Value)
+		for k,v :=range r.values {
+			ins[strings.ToLower(k)]=v
+		}
+		if _,ok := ins["id"]; ok {
+			ins["id"]=SysInt(e.tables[r.table].data.Len()+1).Value()
+		}
+		e.tables[r.table].data.Push(ins)
 	case DELETE:
 		fmt.Println(r)
 	}
