@@ -322,14 +322,29 @@ func (e *XMLConnector) match(conds vector.Vector, row map[string]Value) bool {
 			if !Equal(row[cond.field], cond.value) {
 				return false
 			}
+		case ISNOTNULL:
+			if isnull(row[cond.field]) {return false}
+		case ISNULL:
+			if !isnull(row[cond.field]) {return false}
 
 		default:
-			fmt.Fprintln(os.Stderr, "Unknown cond"+fmt.Sprint(cond))
+			fmt.Fprintln(os.Stderr, "Unknown cond "+fmt.Sprint(cond))
 			return false
 		}
 	}
 	return true
 }
+
+func isnull( v Value) bool{
+switch v.Kind() {
+case IntKind :
+	return int(v.Int())==0
+case StringKind :
+	return string(v.String())==""
+}
+return false
+}
+
 
 func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 	ret := new(vector.Vector)
@@ -363,6 +378,10 @@ func (e *XMLConnector) Query(r *Relation) *vector.Vector {
 			}
 		}
 	case COUNT:
+		 for  i:=range r.attributes {
+			k:=r.attributes.At(i)
+			r.Where(F(k).IsNotNull())
+		 }
 		dat := e.tables[r.table].data
 		count:=0
 		for i := 0; i < dat.Len(); i++ {

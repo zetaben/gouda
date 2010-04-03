@@ -19,6 +19,8 @@ type Condition struct {
 const (
 NULL OperandKind = iota
 EQUAL
+ISNOTNULL
+ISNULL
 )
 const (
 SELECT RequestKind = iota
@@ -166,21 +168,33 @@ c.value=SysString(v.(string)).Value()
 return c
 }
 
+func (c *Condition) IsNotNull() *Condition {
+c.operand=ISNOTNULL
+return c
+}
 
+func (c *Condition) IsNull() *Condition {
+c.operand=ISNULL
+return c
+}
 func (c *Condition) String() string {
 ret:=c.field
 switch c.operand {
 case EQUAL:
 ret+=" = "
+case ISNOTNULL:
+ret+=" IS NOT NULL "
+case ISNULL:
+ret+=" IS NULL "
 }
-
+if c.operand != ISNOTNULL && c.operand != ISNULL {
 switch c.value.Kind() {
 case IntKind:
 ret+=fmt.Sprint(int(c.value.Int()))
 case StringKind:
 ret+=fmt.Sprint(string(c.value.String()))
 }
-
+}
 return ret
 }
 
