@@ -20,6 +20,7 @@ type Condition struct {
 const (
 	NULL OperandKind = iota
 	EQUAL
+	NOTEQUAL
 	ISNOTNULL
 	ISNULL
 	GREATER
@@ -177,6 +178,11 @@ func (c *Condition) Eq(v interface{}) *Condition {
 	return c.Value(v)
 }
 
+func (c *Condition) NEq(v interface{}) *Condition {
+	c.operand = NOTEQUAL
+	return c.Value(v)
+}
+
 func (c *Condition) Gt(v interface{}) *Condition {
 	c.operand = GREATER
 	return c.Value(v)
@@ -213,6 +219,8 @@ func (c *Condition) String() string {
 	switch c.operand {
 	case EQUAL:
 		ret += " = "
+	case NOTEQUAL:
+		ret += " != "
 	case ISNOTNULL:
 		ret += " IS NOT NULL "
 	case ISNULL:

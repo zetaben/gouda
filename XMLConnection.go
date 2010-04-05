@@ -322,6 +322,10 @@ func (e *XMLConnector) match(conds vector.Vector, row map[string]Value) bool {
 			if !Equal(row[cond.field], cond.value) {
 				return false
 			}
+		case NOTEQUAL:
+			if Equal(row[cond.field], cond.value) {
+				return false
+			}
 		case GREATER:
 			if !More(row[cond.field], cond.value) {
 				return false

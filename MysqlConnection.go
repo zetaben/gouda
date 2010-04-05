@@ -29,6 +29,8 @@ func (c *Condition) mysql_string() string {
 
 	case EQUAL:
 		ret += " = '" + mysql_string(c.value) + "' "
+	case NOTEQUAL:
+		ret += " != '" + mysql_string(c.value) + "' "
 	case GREATER:
 		ret += " > '" + mysql_string(c.value) + "' "
 	case LOWER:

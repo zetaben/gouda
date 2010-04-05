@@ -143,6 +143,11 @@ func TestModelRelationFetch(t *testing.T) {
 	if p.Nom != "titi" || p.Id != 2 {
 		t.Error("Not Found titi")
 	}
+
+	p = Personnes.Where(gouda.F("id").NEq(1)).First().(Personne)
+	if p.Nom != "titi" || p.Id != 2 {
+		t.Error("Not Found titi")
+	}
 }
 
 func TestModelRelationFetchOrder(t *testing.T) {
