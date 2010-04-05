@@ -148,6 +148,10 @@ func TestModelRelationFetch(t *testing.T) {
 	if p.Nom != "titi" || p.Id != 2 {
 		t.Error("Not Found titi")
 	}
+	totos = Personnes.Where(gouda.F("id").Eq(1).Or(gouda.F("age").IsNull())).All()
+	if len(totos) != 2 {
+		t.Fatal("Wrong Fetched Size, fetched :" + fmt.Sprint(len(totos)))
+	}
 }
 
 func TestModelRelationFetchOrder(t *testing.T) {

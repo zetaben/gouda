@@ -27,6 +27,7 @@ const (
 	LOWER
 	GREATEROREQUAL
 	LOWEROREQUAL
+	OR
 )
 const (
 	SELECT RequestKind = iota
@@ -163,7 +164,7 @@ func F(field string) (c *Condition) {
 	return
 }
 
-func (c *Condition) Value(v interface{} ) *Condition {
+func (c *Condition) Value(v interface{}) *Condition {
 	switch v.(type) {
 	case int:
 		c.value = SysInt(v.(int)).Value()
@@ -214,7 +215,29 @@ func (c *Condition) IsNull() *Condition {
 	return c
 }
 
+func (c *Condition) Or(c2 *Condition) *Condition {
+	if c.operand != OR {
+		orc := new(Condition)
+		orc.operand = OR
+		orc.or.Push(c)
+		c = orc
+	}
+	c.or.Push(c2)
+	return c
+}
+
 func (c *Condition) String() string {
+	if c.operand == OR {
+		ret := " ( "
+		for i := range c.or {
+			ret += c.or.At(i).(*Condition).String()
+			if i != c.or.Len()-1 {
+				ret += " ) OR ("
+			}
+		}
+		ret += ")"
+		return ret
+	}
 	ret := c.field
 	switch c.operand {
 	case EQUAL:
@@ -234,7 +257,7 @@ func (c *Condition) String() string {
 	case GREATEROREQUAL:
 		ret += " >= "
 	default:
-		ret+=" NO SE OP"
+		ret += " NO SE OP"
 	}
 	if c.operand != ISNOTNULL && c.operand != ISNULL {
 		switch c.value.Kind() {

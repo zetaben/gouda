@@ -23,6 +23,18 @@ func mysql_string(v Value) string {
 
 func (c *Condition) mysql_string() string {
 
+	if c.operand == OR {
+		ret := " ( "
+		for i := range c.or {
+			ret += c.or.At(i).(*Condition).String()
+			if i != c.or.Len()-1 {
+				ret += " ) OR ("
+			}
+		}
+		ret += ")"
+		return ret
+	}
+
 	ret := " " + c.field + " "
 
 	switch c.operand {

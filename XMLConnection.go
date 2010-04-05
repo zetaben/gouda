@@ -306,6 +306,58 @@ func copyVect(v *ValueVector) *ValueVector {
 	return ret
 }
 
+func (e *XMLConnector) match_one(cond *Condition, row map[string]Value) bool {
+	switch cond.operand {
+	case NULL:
+		return false
+	case EQUAL:
+		if !Equal(row[cond.field], cond.value) {
+			return false
+		}
+	case NOTEQUAL:
+		if Equal(row[cond.field], cond.value) {
+			return false
+		}
+	case GREATER:
+		if !More(row[cond.field], cond.value) {
+			return false
+		}
+	case LOWER:
+		if !Less(row[cond.field], cond.value) {
+			return false
+		}
+	case GREATEROREQUAL:
+		if !MoreOrEqual(row[cond.field], cond.value) {
+			return false
+		}
+	case LOWEROREQUAL:
+		if !LessOrEqual(row[cond.field], cond.value) {
+			return false
+		}
+	case ISNOTNULL:
+		if isnull(row[cond.field]) {
+			return false
+		}
+	case ISNULL:
+		if !isnull(row[cond.field]) {
+			return false
+		}
+
+	case OR:
+		for i := range cond.or {
+			if e.match_one(cond.or.At(i).(*Condition), row) {
+				return true
+			}
+		}
+		return false
+
+	default:
+		fmt.Fprintln(os.Stderr, "Unknown cond "+fmt.Sprint(cond))
+		return false
+	}
+	return true
+}
+
 func (e *XMLConnector) match(conds vector.Vector, row map[string]Value) bool {
 
 	if conds.Len() == 0 {
@@ -314,45 +366,7 @@ func (e *XMLConnector) match(conds vector.Vector, row map[string]Value) bool {
 
 	for i := range conds {
 		cond := conds.At(i).(*Condition)
-
-		switch cond.operand {
-		case NULL:
-			return false
-		case EQUAL:
-			if !Equal(row[cond.field], cond.value) {
-				return false
-			}
-		case NOTEQUAL:
-			if Equal(row[cond.field], cond.value) {
-				return false
-			}
-		case GREATER:
-			if !More(row[cond.field], cond.value) {
-				return false
-			}
-		case LOWER:
-			if !Less(row[cond.field], cond.value) {
-				return false
-			}
-		case GREATEROREQUAL:
-			if !MoreOrEqual(row[cond.field], cond.value) {
-				return false
-			}
-		case LOWEROREQUAL:
-			if !LessOrEqual(row[cond.field], cond.value) {
-				return false
-			}
-		case ISNOTNULL:
-			if isnull(row[cond.field]) {
-				return false
-			}
-		case ISNULL:
-			if !isnull(row[cond.field]) {
-				return false
-			}
-
-		default:
-			fmt.Fprintln(os.Stderr, "Unknown cond "+fmt.Sprint(cond))
+		if !e.match_one(cond, row) {
 			return false
 		}
 	}
