@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"os"
 )
-
+/*** Test Models ***/
 type Personne struct {
 	Nom string
 	Id  int
@@ -16,10 +16,13 @@ type Personne struct {
 	gouda.NullModel
 }
 
-var conn_ok bool = false
-
 func (p Personne) TableName() string { return "personne" }
 
+/*** Test Helping variables ***/
+
+var conn_ok bool = false
+
+/*** Test Functions ***/
 
 func TestAttributes(t *testing.T) {
 	need_connection()
@@ -84,15 +87,11 @@ func TestModelFetch(t *testing.T) {
 	need_connection()
 	p := new(Personne)
 	z := gouda.M(p).First().(Personne)
-	//	fmt.Println(z.Id)
-	//	fmt.Println(z)
 	if z.Id != 1 {
 		t.Error("wrong personne found : Id : " + fmt.Sprint(z.Id))
 	}
 
 	z = gouda.M(p).Last().(Personne)
-	//	fmt.Println(z.Id)
-	//	fmt.Println(z)
 	if z.Id != 2 {
 		t.Error("wrong personne found : Id : " + fmt.Sprint(z.Id))
 	}
@@ -124,6 +123,25 @@ func TestModelRelationFetch(t *testing.T) {
 	toto = totos[0].(Personne)
 	if toto.Nom != "toto" || toto.Id != 1 {
 		t.Error("Not Found toto")
+	}
+	p = Personnes.Where(gouda.F("id").Gt(1)).First().(Personne)
+	if p.Nom != "titi" || p.Id != 2 {
+		t.Error("Not Found titi")
+	}
+
+	p = Personnes.Where(gouda.F("id").Lt(2)).First().(Personne)
+	if p.Nom != "toto" || p.Id != 1 {
+		t.Error("Not Found toto")
+	}
+
+	p = Personnes.Where(gouda.F("id").GtEq(1)).First().(Personne)
+	if p.Nom != "toto" || p.Id != 1 {
+		t.Error("Not Found toto")
+	}
+
+	p = Personnes.Order("id","DESC").Where(gouda.F("id").LtEq(2)).First().(Personne)
+	if p.Nom != "titi" || p.Id != 2 {
+		t.Error("Not Found titi")
 	}
 }
 

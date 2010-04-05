@@ -96,3 +96,28 @@ func Equal(v1, v2 Value) bool {
 	}
 	return false
 }
+
+func Less(v1, v2 Value) bool {
+	if v1.Kind() != v2.Kind() {
+		return false
+	}
+	switch v1.Kind() {
+	case IntKind:
+		return int(v1.Int()) < int(v2.Int())
+	case StringKind:
+		return string(v1.String()) < string(v2.String())
+	}
+	return false
+}
+
+func More(v1, v2 Value) bool {
+	return !Less(v1,v2) && !Equal(v1,v2)
+}
+
+func MoreOrEqual(v1, v2 Value) bool {
+	return !Less(v1,v2)
+}
+
+func LessOrEqual(v1, v2 Value) bool {
+	return Less(v1,v2) || Equal(v1, v2)
+}

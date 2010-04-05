@@ -22,6 +22,10 @@ const (
 	EQUAL
 	ISNOTNULL
 	ISNULL
+	GREATER
+	LOWER
+	GREATEROREQUAL
+	LOWEROREQUAL
 )
 const (
 	SELECT RequestKind = iota
@@ -158,8 +162,7 @@ func F(field string) (c *Condition) {
 	return
 }
 
-func (c *Condition) Eq(v interface{}) *Condition {
-	c.operand = EQUAL
+func (c *Condition) Value(v interface{} ) *Condition {
 	switch v.(type) {
 	case int:
 		c.value = SysInt(v.(int)).Value()
@@ -168,6 +171,32 @@ func (c *Condition) Eq(v interface{}) *Condition {
 	}
 	return c
 }
+
+func (c *Condition) Eq(v interface{}) *Condition {
+	c.operand = EQUAL
+	return c.Value(v)
+}
+
+func (c *Condition) Gt(v interface{}) *Condition {
+	c.operand = GREATER
+	return c.Value(v)
+}
+
+func (c *Condition) Lt(v interface{}) *Condition {
+	c.operand = LOWER
+	return c.Value(v)
+}
+
+func (c *Condition) GtEq(v interface{}) *Condition {
+	c.operand = GREATEROREQUAL
+	return c.Value(v)
+}
+
+func (c *Condition) LtEq(v interface{}) *Condition {
+	c.operand = LOWEROREQUAL
+	return c.Value(v)
+}
+
 
 func (c *Condition) IsNotNull() *Condition {
 	c.operand = ISNOTNULL
@@ -178,6 +207,7 @@ func (c *Condition) IsNull() *Condition {
 	c.operand = ISNULL
 	return c
 }
+
 func (c *Condition) String() string {
 	ret := c.field
 	switch c.operand {
@@ -187,6 +217,16 @@ func (c *Condition) String() string {
 		ret += " IS NOT NULL "
 	case ISNULL:
 		ret += " IS NULL "
+	case LOWER:
+		ret += " < "
+	case GREATER:
+		ret += " > "
+	case LOWEROREQUAL:
+		ret += " <= "
+	case GREATEROREQUAL:
+		ret += " >= "
+	default:
+		ret+=" NO SE OP"
 	}
 	if c.operand != ISNOTNULL && c.operand != ISNULL {
 		switch c.value.Kind() {

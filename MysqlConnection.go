@@ -29,7 +29,14 @@ func (c *Condition) mysql_string() string {
 
 	case EQUAL:
 		ret += " = '" + mysql_string(c.value) + "' "
-
+	case GREATER:
+		ret += " > '" + mysql_string(c.value) + "' "
+	case LOWER:
+		ret += " < '" + mysql_string(c.value) + "' "
+	case GREATEROREQUAL:
+		ret += " >= '" + mysql_string(c.value) + "' "
+	case LOWEROREQUAL:
+		ret += " <= '" + mysql_string(c.value) + "' "
 	case ISNULL:
 		ret += " IS NULL "
 	case ISNOTNULL:
