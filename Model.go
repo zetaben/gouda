@@ -11,9 +11,17 @@ type ModelInterface interface {
 	Identifier() string
 }
 
+type AssociationKind int
+const (
+BELONGS_TO AssociationKind =iota
+HAS_MANY
+HAS_ONE
+HAS_AND_BELONGS_TO_MANY
+)
+
 type Association struct {
 	model *Model
-	arity int
+	kind AssociationKind
 	fieldname string
 }
 
@@ -90,17 +98,21 @@ func (m *Model) AttributesNames() (ret []string) {
 	return ret
 }
 
-func (m *Model) addAssociation(am *Model, name string ,arity int , fieldname string){
-	var a=Association{arity:arity,model:am,fieldname:fieldname}
+func (m *Model) addAssociation(am *Model, name string ,kind AssociationKind , fieldname string){
+	var a=Association{kind:kind,model:am,fieldname:fieldname}
 	m.associations[name]=a
 }
 
 func (m *Model) BelongsToKey(am *Model, name, key string) {
-	m.addAssociation(am,name,1,key)
+	m.addAssociation(am,name,BELONGS_TO,key)
 }
 
 func (m *Model) HasManyKey(am *Model, name, key string) {
-	m.addAssociation(am,name,2,key)
+	m.addAssociation(am,name,HAS_MANY,key)
+}
+
+func (m *Model) HasONEKey(am *Model, name, key string) {
+	m.addAssociation(am,name,HAS_ONE,key)
 }
 
 func (m *Model) GetAssociated(name string,in interface{}) interface{} {
@@ -113,14 +125,14 @@ func (m *Model) GetAssociated(name string,in interface{}) interface{} {
 		panic("No Such Association : "+name)
 	}
 	fieldname:=""
-	if ama.arity == 1 {
+	if ama.kind!=HAS_MANY && ama.kind!=HAS_ONE {
 	fieldname=ama.fieldname
 	} else {
 	fieldname=m.identifier
 	}
 	id := st.(*reflect.StructValue).FieldByName(fieldname).(*reflect.IntValue).Get()
 	req:=ama.model.Where(F(ama.model.identifier).Eq(id))
-	if ama.arity == 1 {
+	if ama.kind == BELONGS_TO || ama.kind == HAS_ONE {
 	return req.First()
 	}
 	return req.All()
