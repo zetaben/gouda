@@ -33,7 +33,7 @@ Or use goinstall (UNTESTED YET !)
 At the moment Gouda as the following limitations : 
 
  - Connects only to mysql and XML files
- - Doesn't know about associations
+ - limited support for associations (railslike HasMany, BelongsTo)
  - Knows only how to handle int and string attributes !
  - Connections needs to be registered in the store to be usable automatically... 
  - Needs way more documentation ! 
