@@ -11,6 +11,12 @@ type ModelInterface interface {
 	Identifier() string
 }
 
+type Association struct {
+	model *Model
+	arity int
+	fieldname string
+}
+
 type Model struct {
 	tablename    string
 	identifier   string
@@ -18,6 +24,7 @@ type Model struct {
 	object_cache map[int]map[string]Value
 	runtype      reflect.Type
 	connection   *Connection
+	associations map[string]Association
 }
 
 type ModelRelation struct {
@@ -36,7 +43,6 @@ type NullModel struct{}
 func (n NullModel) TableName() string { return "NilTable create a TableName" }
 
 func (n NullModel) Identifier() string { return "Id" }
-
 
 /** utils **/
 
@@ -65,6 +71,7 @@ func attributes(m interface{}) (map[string]reflect.Type, reflect.Type) {
 	return ret, typ
 }
 
+
 /** Model **/
 func (m Model) TableName() string { return m.tablename }
 
@@ -82,6 +89,35 @@ func (m *Model) AttributesNames() (ret []string) {
 	}
 	return ret
 }
+
+func (m *Model) addAssociation(am *Model, name string ,arity int , fieldname string){
+	var a=Association{arity:arity,model:am,fieldname:fieldname}
+	m.associations[name]=a
+}
+
+func (m *Model) Belongs_to_Key(am *Model, name, key string) {
+	m.addAssociation(am,name,1,key)
+}
+
+func (m *Model) GetAssociated(name string,in interface{}) interface{} {
+	st := reflect.NewValue(in)
+	if p, ok := st.(*reflect.PtrValue); ok {
+		st = p.Elem()
+	}
+	ama,ok:=m.associations[name]
+	if !ok {
+		panic("No Such Association : "+name)
+	}
+	fieldname:=ama.fieldname
+	id := st.(*reflect.StructValue).FieldByName(fieldname).(*reflect.IntValue).Get()
+	req:=ama.model.Where(F(ama.model.identifier).Eq(id))
+	if ama.arity == 1 {
+	return req.First()
+	}
+	return req.All()
+
+}
+
 
 func (m *Model) Last() interface{} {
 	q := NewRelation(m.tablename).Order(strings.ToLower(m.identifier), "desc").First()
@@ -273,6 +309,7 @@ func (st *ModelStore) RegisterModelWithConnection(m ModelInterface, conn *Connec
 	mod.runtype = run
 	mod.connection = conn
 	mod.object_cache = make(map[int]map[string]Value)
+	mod.associations = make(map[string]Association)
 	(*st)[modelname] = mod
 	return mod
 }

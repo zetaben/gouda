@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"os"
 )
+
 /*** Test Models ***/
 type Personne struct {
 	Nom string
@@ -17,6 +18,16 @@ type Personne struct {
 }
 
 func (p Personne) TableName() string { return "personne" }
+
+type Car struct {
+	Id  int
+	Plate string
+	Model string
+	Owner_id int
+	gouda.NullModel
+}
+
+func (p Car) TableName() string { return "cars" }
 
 /*** Test Helping variables ***/
 
@@ -215,6 +226,20 @@ func TestModelRelationRefresh(t *testing.T) {
 	}
 }
 
+func TestModelAssociations(t *testing.T) {
+	var p Personne
+	var c Car
+	need_connection()
+	Personnes := gouda.M(p)
+	Cars := gouda.M(c)
+	Cars.Belongs_to_Key(Personnes,"owner","Owner_id")
+	car:=Cars.First().(Car)
+	p=Cars.GetAssociated("owner",car).(Personne)
+	if p.Nom != "toto" || p.Id != 1 {
+		t.Error("Not Found toto")
+	}
+}
+
 func need_connection() {
 	if !conn_ok {
 		init_mysql()
@@ -271,9 +296,12 @@ func init_mysql() {
 	pid, _ := os.ForkExec("/usr/bin/mysql", []string{"/usr/bin/mysql", "test_db"}, os.Environ(), "/versatile", []*os.File{r, os.Stdout, os.Stderr})
 	//	fmt.Fprintln(w,"show tables;");
 	fmt.Fprintln(w, "DROP TABLE personne;")
+	fmt.Fprintln(w, "DROP TABLE cars;")
 	fmt.Fprintln(w, "CREATE TABLE `personne` ( `id` int(11) NOT NULL auto_increment, `nom` varchar(255) default NULL,  age int(3) default NULL,   PRIMARY KEY  (`id`)  );")
 	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (1,'toto',23);")
 	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (2,'titi',NULL);")
+	fmt.Fprintln(w, "CREATE TABLE `cars` ( `id` int(11) NOT NULL auto_increment, `plate` varchar(255) default NULL,   `model` varchar(255) default NULL, owner_id int(11) default NULL,   PRIMARY KEY  (`id`)  );")
+	fmt.Fprintln(w, "INSERT INTO `cars` VALUES (1,'123ABC12','Renault',1);")
 	w.Close()
 	os.Wait(pid, 0)
 	fmt.Println("Finished!")
@@ -290,6 +318,11 @@ func init_xml() {
 	table.AddAttribute("age", gouda.IntKind)
 	table.Insert(map[string]gouda.Value{"id": gouda.SysInt(1).Value(), "nom": gouda.SysString("toto").Value(), "age": gouda.SysInt(13).Value()})
 	table.Insert(map[string]gouda.Value{"id": gouda.SysInt(2).Value(), "nom": gouda.SysString("titi").Value(), "age": gouda.SysInt(0).Value()})
+	table = conn.CreateTable("cars")
+	table.AddAttribute("plate", gouda.StringKind)
+	table.AddAttribute("model", gouda.StringKind)
+	table.AddAttribute("owner_id", gouda.IntKind)
+	table.Insert(map[string]gouda.Value{"id": gouda.SysInt(1).Value(), "plate": gouda.SysString("123ABC12").Value(), "model": gouda.SysString("Renault").Value(),"owner_id": gouda.SysInt(1).Value()})
 	conn.Close()
 	conn2 := gouda.OpenXML(conStr)
 	gouda.GetConnectionStore().RegisterConnection(&conn2)
