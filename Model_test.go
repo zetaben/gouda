@@ -232,11 +232,19 @@ func TestModelAssociations(t *testing.T) {
 	need_connection()
 	Personnes := gouda.M(p)
 	Cars := gouda.M(c)
-	Cars.Belongs_to_Key(Personnes,"owner","Owner_id")
+	Cars.BelongsToKey(Personnes,"owner","Owner_id")
+	Personnes.HasManyKey(Cars,"cars","Owner_id")
 	car:=Cars.First().(Car)
 	p=Cars.GetAssociated("owner",car).(Personne)
 	if p.Nom != "toto" || p.Id != 1 {
 		t.Error("Not Found toto")
+	}
+	cars:=Personnes.GetAssociated("cars",p).([]interface{})
+	if len(cars)!=1 {
+		t.Error("Associated cars not found")
+	}
+	if cars[0].(Car).Id!=1 {
+		t.Error("Associated car not found (first one)")
 	}
 }
 

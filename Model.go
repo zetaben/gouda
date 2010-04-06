@@ -95,8 +95,12 @@ func (m *Model) addAssociation(am *Model, name string ,arity int , fieldname str
 	m.associations[name]=a
 }
 
-func (m *Model) Belongs_to_Key(am *Model, name, key string) {
+func (m *Model) BelongsToKey(am *Model, name, key string) {
 	m.addAssociation(am,name,1,key)
+}
+
+func (m *Model) HasManyKey(am *Model, name, key string) {
+	m.addAssociation(am,name,2,key)
 }
 
 func (m *Model) GetAssociated(name string,in interface{}) interface{} {
@@ -108,7 +112,12 @@ func (m *Model) GetAssociated(name string,in interface{}) interface{} {
 	if !ok {
 		panic("No Such Association : "+name)
 	}
-	fieldname:=ama.fieldname
+	fieldname:=""
+	if ama.arity == 1 {
+	fieldname=ama.fieldname
+	} else {
+	fieldname=m.identifier
+	}
 	id := st.(*reflect.StructValue).FieldByName(fieldname).(*reflect.IntValue).Get()
 	req:=ama.model.Where(F(ama.model.identifier).Eq(id))
 	if ama.arity == 1 {
