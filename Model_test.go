@@ -20,20 +20,27 @@ type Personne struct {
 func (p Personne) TableName() string { return "personne" }
 
 type Car struct {
-	Id  int
-	Plate string
-	Model string
+	Id       int
+	Plate    string
+	Model    string
 	Owner_id int
 	gouda.NullModel
 }
-
-func (p Car) TableName() string { return "cars" }
 
 /*** Test Helping variables ***/
 
 var conn_ok bool = false
 
 /*** Test Functions ***/
+
+func TestTableName(t *testing.T) {
+	need_connection()
+	var c Car
+	Cars := gouda.M(c)
+	if Cars.TableName() != "cars" {
+		t.Error("Wrong TableName")
+	}
+}
 
 func TestAttributes(t *testing.T) {
 	need_connection()
@@ -150,7 +157,7 @@ func TestModelRelationFetch(t *testing.T) {
 		t.Error("Not Found toto")
 	}
 
-	p = Personnes.Order("id","DESC").Where(gouda.F("id").LtEq(2)).First().(Personne)
+	p = Personnes.Order("id", "DESC").Where(gouda.F("id").LtEq(2)).First().(Personne)
 	if p.Nom != "titi" || p.Id != 2 {
 		t.Error("Not Found titi")
 	}
@@ -232,18 +239,18 @@ func TestModelAssociations(t *testing.T) {
 	need_connection()
 	Personnes := gouda.M(p)
 	Cars := gouda.M(c)
-	Cars.BelongsToKey(Personnes,"owner","Owner_id")
-	Personnes.HasManyKey(Cars,"cars","Owner_id")
-	car:=Cars.First().(Car)
-	p=Cars.GetAssociated("owner",car).(Personne)
+	Cars.BelongsToKey(Personnes, "owner", "Owner_id")
+	Personnes.HasManyKey(Cars, "cars", "Owner_id")
+	car := Cars.First().(Car)
+	p = Cars.GetAssociated("owner", car).(Personne)
 	if p.Nom != "toto" || p.Id != 1 {
 		t.Error("Not Found toto")
 	}
-	cars:=Personnes.GetAssociated("cars",p).([]interface{})
-	if len(cars)!=1 {
+	cars := Personnes.GetAssociated("cars", p).([]interface{})
+	if len(cars) != 1 {
 		t.Error("Associated cars not found")
 	}
-	if cars[0].(Car).Id!=1 {
+	if cars[0].(Car).Id != 1 {
 		t.Error("Associated car not found (first one)")
 	}
 }
@@ -330,7 +337,7 @@ func init_xml() {
 	table.AddAttribute("plate", gouda.StringKind)
 	table.AddAttribute("model", gouda.StringKind)
 	table.AddAttribute("owner_id", gouda.IntKind)
-	table.Insert(map[string]gouda.Value{"id": gouda.SysInt(1).Value(), "plate": gouda.SysString("123ABC12").Value(), "model": gouda.SysString("Renault").Value(),"owner_id": gouda.SysInt(1).Value()})
+	table.Insert(map[string]gouda.Value{"id": gouda.SysInt(1).Value(), "plate": gouda.SysString("123ABC12").Value(), "model": gouda.SysString("Renault").Value(), "owner_id": gouda.SysInt(1).Value()})
 	conn.Close()
 	conn2 := gouda.OpenXML(conStr)
 	gouda.GetConnectionStore().RegisterConnection(&conn2)

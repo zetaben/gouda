@@ -12,16 +12,17 @@ type ModelInterface interface {
 }
 
 type AssociationKind int
+
 const (
-BELONGS_TO AssociationKind =iota
-HAS_MANY
-HAS_ONE
-HAS_AND_BELONGS_TO_MANY
+	BELONGS_TO AssociationKind = iota
+	HAS_MANY
+	HAS_ONE
+	HAS_AND_BELONGS_TO_MANY
 )
 
 type Association struct {
-	model *Model
-	kind AssociationKind
+	model     *Model
+	kind      AssociationKind
 	fieldname string
 }
 
@@ -48,7 +49,7 @@ var _ModelStore = make(ModelStore)
 
 type NullModel struct{}
 
-func (n NullModel) TableName() string { return "NilTable create a TableName" }
+func (n NullModel) TableName() string { return "" }
 
 func (n NullModel) Identifier() string { return "Id" }
 
@@ -81,7 +82,7 @@ func attributes(m interface{}) (map[string]reflect.Type, reflect.Type) {
 
 
 /** Model **/
-func (m Model) TableName() string { return m.tablename }
+func (m *Model) TableName() string { return m.tablename }
 
 
 func (m *Model) Attributes() map[string]reflect.Type {
@@ -98,42 +99,42 @@ func (m *Model) AttributesNames() (ret []string) {
 	return ret
 }
 
-func (m *Model) addAssociation(am *Model, name string ,kind AssociationKind , fieldname string){
-	var a=Association{kind:kind,model:am,fieldname:fieldname}
-	m.associations[name]=a
+func (m *Model) addAssociation(am *Model, name string, kind AssociationKind, fieldname string) {
+	var a = Association{kind: kind, model: am, fieldname: fieldname}
+	m.associations[name] = a
 }
 
 func (m *Model) BelongsToKey(am *Model, name, key string) {
-	m.addAssociation(am,name,BELONGS_TO,key)
+	m.addAssociation(am, name, BELONGS_TO, key)
 }
 
 func (m *Model) HasManyKey(am *Model, name, key string) {
-	m.addAssociation(am,name,HAS_MANY,key)
+	m.addAssociation(am, name, HAS_MANY, key)
 }
 
 func (m *Model) HasONEKey(am *Model, name, key string) {
-	m.addAssociation(am,name,HAS_ONE,key)
+	m.addAssociation(am, name, HAS_ONE, key)
 }
 
-func (m *Model) GetAssociated(name string,in interface{}) interface{} {
+func (m *Model) GetAssociated(name string, in interface{}) interface{} {
 	st := reflect.NewValue(in)
 	if p, ok := st.(*reflect.PtrValue); ok {
 		st = p.Elem()
 	}
-	ama,ok:=m.associations[name]
+	ama, ok := m.associations[name]
 	if !ok {
-		panic("No Such Association : "+name)
+		panic("No Such Association : " + name)
 	}
-	fieldname:=""
-	if ama.kind!=HAS_MANY && ama.kind!=HAS_ONE {
-	fieldname=ama.fieldname
+	fieldname := ""
+	if ama.kind != HAS_MANY && ama.kind != HAS_ONE {
+		fieldname = ama.fieldname
 	} else {
-	fieldname=m.identifier
+		fieldname = m.identifier
 	}
 	id := st.(*reflect.StructValue).FieldByName(fieldname).(*reflect.IntValue).Get()
-	req:=ama.model.Where(F(ama.model.identifier).Eq(id))
+	req := ama.model.Where(F(ama.model.identifier).Eq(id))
 	if ama.kind == BELONGS_TO || ama.kind == HAS_ONE {
-	return req.First()
+		return req.First()
 	}
 	return req.All()
 
@@ -299,7 +300,7 @@ func Delete(a interface{}) interface{}  { return M(a.(ModelInterface)).Delete(a)
 func ModelName(m ModelInterface) (ret string) {
 	t := reflect.Typeof(m).String()
 	tab := strings.Split(t, ".", 0)
-	return tab[len(tab)-1] + "-" + m.TableName()
+	return tab[len(tab)-1] + "-" + GetTableName(m)
 }
 
 func M(m ModelInterface) *Model {
@@ -311,6 +312,15 @@ func M(m ModelInterface) *Model {
 
 }
 
+func GetTableName(m ModelInterface) string {
+	s := m.TableName()
+	if s == "" {
+		t := reflect.Typeof(m).String()
+		tab := strings.Split(t, ".", 0)
+		return strings.ToLower(tab[len(tab)-1]) + "s"
+	}
+	return s
+}
 
 /** ModelStore **/
 
@@ -323,7 +333,7 @@ func (st *ModelStore) RegisterModel(m ModelInterface) *Model {
 func (st *ModelStore) RegisterModelWithConnection(m ModelInterface, conn *Connection) *Model {
 	modelname := ModelName(m)
 	mod := new(Model)
-	mod.tablename = m.TableName()
+	mod.tablename = GetTableName(m)
 	mod.identifier = m.Identifier()
 	attr, run := attributes(m)
 	mod.attributes = attr
