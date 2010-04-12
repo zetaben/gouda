@@ -247,7 +247,7 @@ func TestModelAssociations(t *testing.T) {
 		t.Error("Not Found toto")
 	}
 	cars := Personnes.GetAssociated("cars", p).([]interface{})
-	if len(cars) != 1 {
+	if len(cars) != 2 {
 		t.Error("Associated cars not found")
 	}
 	if cars[0].(Car).Id != 1 {
@@ -317,6 +317,7 @@ func init_mysql() {
 	fmt.Fprintln(w, "INSERT INTO `personne` VALUES (2,'titi',NULL);")
 	fmt.Fprintln(w, "CREATE TABLE `cars` ( `id` int(11) NOT NULL auto_increment, `plate` varchar(255) default NULL,   `model` varchar(255) default NULL, owner_id int(11) default NULL,   PRIMARY KEY  (`id`)  );")
 	fmt.Fprintln(w, "INSERT INTO `cars` VALUES (1,'123ABC12','Renault',1);")
+	fmt.Fprintln(w, "INSERT INTO `cars` VALUES (2,'123CBA12','Traban',1);")
 	w.Close()
 	os.Wait(pid, 0)
 	fmt.Println("Finished!")

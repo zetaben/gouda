@@ -126,13 +126,13 @@ func (m *Model) GetAssociated(name string, in interface{}) interface{} {
 		panic("No Such Association : " + name)
 	}
 	fieldname := ""
-	if ama.kind != HAS_MANY && ama.kind != HAS_ONE {
+	if ama.kind == HAS_MANY || ama.kind == HAS_ONE {
 		fieldname = ama.fieldname
 	} else {
 		fieldname = m.identifier
 	}
-	id := st.(*reflect.StructValue).FieldByName(fieldname).(*reflect.IntValue).Get()
-	req := ama.model.Where(F(ama.model.identifier).Eq(id))
+	id := st.(*reflect.StructValue).FieldByName(ama.model.identifier).(*reflect.IntValue).Get()
+	req := ama.model.Where(F(fieldname).Eq(id))
 	if ama.kind == BELONGS_TO || ama.kind == HAS_ONE {
 		return req.First()
 	}
