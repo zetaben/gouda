@@ -26,6 +26,7 @@ You first need [Thoj Mysql Client Library](http://github.com/thoj/Go-MySQL-Clien
  4. Use it !
 
  Peruse through Model_test.go to view typical usages
+ A sample application application can be found in misc directory
 
 ## Known limitations 
 
