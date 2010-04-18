@@ -17,7 +17,6 @@ You first need [Thoj Mysql Client Library](http://github.com/thoj/Go-MySQL-Clien
 	$ make
 	$ make install
 
-Or use goinstall (UNTESTED YET !)
 
 ## Usage 
 	
