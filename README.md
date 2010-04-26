@@ -12,7 +12,7 @@ Gouda is an experimental ORM for Go.
 
 You first need [Thoj Mysql Client Library](http://github.com/thoj/Go-MySQL-Client-Library/)  
 
-	$ git clone git@github.com:zetaben/gouda.git
+	$ git clone git://github.com/zetaben/gouda.git
 	$ cd gouda
 	$ make
 	$ make install
